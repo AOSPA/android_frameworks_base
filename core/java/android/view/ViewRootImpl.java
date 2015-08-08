@@ -7943,6 +7943,11 @@ public final class ViewRootImpl implements ViewParent,
                 mLastClickToolType = event.getToolType(event.getActionIndex());
             }
 
+            if (event.getPointerCount() == 3 && isSwipeToScreenshotGestureActive()) {
+                event.setAction(MotionEvent.ACTION_CANCEL);
+                Log.d("SwipeToScreenShot", "canceling motionEvent because of threeGesture detecting");
+            }
+
             mAttachInfo.mUnbufferedDispatchRequested = false;
             mAttachInfo.mHandlingPointerEvent = true;
             handled = mView.dispatchPointerEvent(event);
@@ -13261,6 +13266,15 @@ public final class ViewRootImpl implements ViewParent,
                     ? infrequentUpdateCount : infrequentUpdateCount + 1;
         } else {
             mInfrequentUpdateCount = 0;
+        }
+    }
+
+    private boolean isSwipeToScreenshotGestureActive() {
+        try {
+            return ActivityManager.getService().isSwipeToScreenshotGestureActive();
+        } catch (RemoteException e) {
+            Log.e("SwipeToScreenshot", "isSwipeToScreenshotGestureActive exception", e);
+            return false;
         }
     }
 }
