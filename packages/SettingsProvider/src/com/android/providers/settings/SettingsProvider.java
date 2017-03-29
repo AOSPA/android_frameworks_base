@@ -4581,12 +4581,12 @@ public class SettingsProvider extends ContentProvider {
 
                 // v120: Add double tap to wake setting.
                 if (currentVersion == 119) {
-                    secureSettings.insertSettingOverrideableByRestoreLocked(
+                    /* secureSettings.insertSettingOverrideableByRestoreLocked(
                             Settings.Secure.DOUBLE_TAP_TO_WAKE,
                             resources.getBoolean(R.bool.def_double_tap_to_wake) ? "1" : "0",
                             null,
                             true,
-                            SettingsState.SYSTEM_PACKAGE_NAME);
+                            SettingsState.SYSTEM_PACKAGE_NAME); */
 
                     currentVersion = 120;
                 }

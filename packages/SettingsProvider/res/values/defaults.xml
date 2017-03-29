@@ -184,9 +184,6 @@
     <!-- Default for Settings.Secure.WAKE_GESTURE_ENABLED -->
     <bool name="def_wake_gesture_enabled">true</bool>
 
-    <!-- Default state of tap to wake -->
-    <bool name="def_double_tap_to_wake">true</bool>
-
     <!-- Default setting for double tap to sleep (Settings.Secure.DOUBLE_TAP_TO_SLEEP) -->
     <bool name="def_double_tap_to_sleep">false</bool>
 
