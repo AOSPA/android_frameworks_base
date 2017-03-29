@@ -206,6 +206,7 @@ cc_defaults {
         "attentionmanager_native_aidl-cpp",
         "server_configurable_flags",
         "service.incremental",
+        "vendor.aospa.power-V1-cpp",
     ],
 
     static_libs: [
