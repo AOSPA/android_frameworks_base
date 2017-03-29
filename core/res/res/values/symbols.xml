@@ -3178,7 +3178,6 @@
   <java-symbol type="layout" name="chooser_profile_row" />
   <java-symbol type="color" name="chooser_row_divider" />
   <java-symbol type="layout" name="chooser_row_direct_share" />
-  <java-symbol type="bool" name="config_supportDoubleTapWake" />
   <java-symbol type="bool" name="config_supportDoubleTapSleep" />
   <java-symbol type="drawable" name="ic_perm_device_info" />
   <java-symbol type="string" name="config_radio_access_family" />

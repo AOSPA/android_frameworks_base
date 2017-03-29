@@ -46,6 +46,9 @@ public class AmbientDisplayConfiguration {
     private final boolean mPickupGestureEnabledByDefault;
     private final boolean mScreenOffUdfpsAvailable;
 
+    /** {@hide} */
+    public static final String DOZE_NO_PROXIMITY_CHECK = "NoProximityCheck";
+
     /** Copied from android.provider.Settings.Secure since these keys are hidden. */
     private static final String[] DOZE_SETTINGS = {
             Settings.Secure.DOZE_ENABLED,

@@ -84,7 +84,6 @@ public class SecureSettings {
         Settings.Secure.MOUNT_UMS_AUTOSTART,
         Settings.Secure.MOUNT_UMS_PROMPT,
         Settings.Secure.MOUNT_UMS_NOTIFY_ENABLED,
-        Settings.Secure.DOUBLE_TAP_TO_WAKE,
         Settings.Secure.DOUBLE_TAP_TO_SLEEP,
         Settings.Secure.WAKE_GESTURE_ENABLED,
         Settings.Secure.LONG_PRESS_TIMEOUT,

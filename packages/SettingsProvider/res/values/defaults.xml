@@ -516,11 +516,6 @@
 <!-- QTI_END: 2018-08-11: Core: base: Secondary NTP Server Settings-->
     <bool name="def_wake_gesture_enabled">true</bool>
 
-    <!-- Default state of tap to wake -->
-<!-- QTI_BEGIN: 2018-08-11: Core: base: Secondary NTP Server Settings-->
-<!-- QTI_END: 2018-08-11: Core: base: Secondary NTP Server Settings-->
-    <bool name="def_double_tap_to_wake">true</bool>
-
     <!-- Default setting for double tap to sleep (Settings.Secure.DOUBLE_TAP_TO_SLEEP) -->
 <!-- QTI_BEGIN: 2018-08-11: Core: base: Secondary NTP Server Settings-->
 <!-- QTI_END: 2018-08-11: Core: base: Secondary NTP Server Settings-->
