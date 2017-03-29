@@ -516,11 +516,6 @@
 <!-- QTI_END: 2020-02-02: Android_UI: SettingsProvider: add time format default value settings-->
     <bool name="def_wake_gesture_enabled">true</bool>
 
-    <!-- Default state of tap to wake -->
-<!-- QTI_BEGIN: 2020-02-02: Android_UI: SettingsProvider: add time format default value settings-->
-<!-- QTI_END: 2020-02-02: Android_UI: SettingsProvider: add time format default value settings-->
-    <bool name="def_double_tap_to_wake">true</bool>
-
     <!-- Default setting for double tap to sleep (Settings.Secure.DOUBLE_TAP_TO_SLEEP) -->
     <bool name="def_double_tap_to_sleep">false</bool>
 

@@ -210,6 +210,7 @@ cc_defaults {
         "android_location_flags_c_lib",
         "server_configurable_flags",
         "service.incremental",
+        "vendor.aospa.power-V1-cpp",
     ],
 
     static_libs: [

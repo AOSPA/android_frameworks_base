@@ -24,6 +24,8 @@
 #include <aidl/android/hardware/power/Mode.h>
 #include <aidl/android/system/suspend/ISystemSuspend.h>
 #include <aidl/android/system/suspend/IWakeLock.h>
+#include <vendor/aospa/power/Feature.h>
+#include <vendor/aospa/power/IPowerFeature.h>
 #include <android-base/chrono_utils.h>
 #include <android/binder_manager.h>
 #include <android/system/suspend/ISuspendControlService.h>
@@ -53,6 +55,8 @@ using aidl::android::system::suspend::IWakeLock;
 using aidl::android::system::suspend::WakeLockType;
 using android::String8;
 using android::system::suspend::ISuspendControlService;
+using PowerFeature = vendor::aospa::power::Feature;
+using vendor::aospa::power::IPowerFeature;
 
 namespace android {
 
@@ -66,6 +70,7 @@ static struct {
 
 static jobject gPowerManagerServiceObj;
 static power::PowerHalController gPowerHalController;
+static sp<IPowerFeature> gPowerAospaHalAidl_ = nullptr;
 static nsecs_t gLastEventTime[USER_ACTIVITY_EVENT_LAST + 1];
 
 // Throttling interval for user activity calls.
@@ -79,6 +84,24 @@ static bool checkAndClearExceptionFromCallback(JNIEnv* env, const char* methodNa
         LOGE_EX(env);
         env->ExceptionClear();
         return true;
+    }
+    return false;
+}
+
+// The caller must be holding gPowerHalMutex.
+static bool connectPowerFeatureHalLocked() {
+    static bool gPowerAospaHalAidlExists = true;
+    if (gPowerAospaHalAidlExists) {
+        if (!gPowerAospaHalAidl_) {
+            gPowerAospaHalAidl_ = waitForVintfService<IPowerFeature>();
+        }
+        if (gPowerAospaHalAidl_) {
+            ALOGV("Successfully connected to PowerFeature HAL AIDL service.");
+            return true;
+        } else {
+            ALOGV("Couldn't load PowerFeature HAL AIDL service");
+            gPowerAospaHalAidlExists = false;
+        }
     }
     return false;
 }
@@ -239,6 +262,14 @@ static jboolean nativeSetPowerMode(JNIEnv* /* env */, jclass /* clazz */, jint m
     return setPowerMode(static_cast<Mode>(mode), enabled);
 }
 
+static void nativeSetParanoidFeature(JNIEnv* /* env */, jclass /* clazz */, jint featureId,
+                                   jint data) {
+    // Try using AOSPAs power hal. If it fails or isn't available, ignore
+    if (connectPowerFeatureHalLocked()) {
+        gPowerAospaHalAidl_->setFeature(static_cast<PowerFeature>(featureId), static_cast<bool>(data));
+    }
+}
+
 static bool nativeForceSuspend(JNIEnv* /* env */, jclass /* clazz */) {
     bool retval = false;
     getSuspendControlInternal()->forceSuspend(&retval);
@@ -258,6 +289,7 @@ static const JNINativeMethod gPowerManagerServiceMethods[] = {
         {"nativeSetAutoSuspend", "(Z)V", (void*)nativeSetAutoSuspend},
         {"nativeSetPowerBoost", "(II)V", (void*)nativeSetPowerBoost},
         {"nativeSetPowerMode", "(IZ)Z", (void*)nativeSetPowerMode},
+        {"nativeSetParanoidFeature", "(II)V", (void*)nativeSetParanoidFeature},
 };
 
 #define FIND_CLASS(var, className) \
