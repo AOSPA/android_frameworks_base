@@ -2114,9 +2114,6 @@ class SettingsProtoDumpUtil {
         dumpSetting(s, p,
                 Settings.Secure.DISPLAY_DENSITY_FORCED,
                 SecureSettingsProto.DISPLAY_DENSITY_FORCED);
-        dumpSetting(s, p,
-                Settings.Secure.DOUBLE_TAP_TO_WAKE,
-                SecureSettingsProto.DOUBLE_TAP_TO_WAKE);
 
         final long displayToken = p.start(SecureSettingsProto.DISPLAY);
         dumpSetting(s, p,

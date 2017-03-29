@@ -40,6 +40,52 @@
     <string-array name="config_deviceKeyHandlerClasses" translatable="false">
     </string-array>
 
+    <!-- Key codes of gestures. If the gesture is not supported set it to 0. -->
+    <integer name="config_doubleTapKeyCode">0</integer>
+    <integer name="config_singleTapKeyCode">0</integer>
+    <integer name="config_drawVKeyCode">0</integer>
+    <integer name="config_drawInverseVKeyCode">0</integer>
+    <integer name="config_drawOKeyCode">0</integer>
+    <integer name="config_drawMKeyCode">0</integer>
+    <integer name="config_drawWKeyCode">0</integer>
+    <integer name="config_drawSKeyCode">0</integer>
+    <integer name="config_drawArrowLeftKeyCode">0</integer>
+    <integer name="config_drawArrowRightKeyCode">0</integer>
+    <integer name="config_oneFingerSwipeUpKeyCode">0</integer>
+    <integer name="config_oneFingerSwipeRightKeyCode">0</integer>
+    <integer name="config_oneFingerSwipeDownKeyCode">0</integer>
+    <integer name="config_oneFingerSwipeLeftKeyCode">0</integer>
+    <integer name="config_twoFingerSwipeKeyCode">0</integer>
+
+    <!-- Default settings for gestures
+            0 - Disabled
+            1 - Wake device
+            2 - Toggle flashlight
+            3 - Toggle airplane mode
+            4 - Play/Pause music
+            5 - Next music
+            6 - Previous music
+            7 - Open camera
+            8 - Open dialer -->
+    <integer name="config_doubleTapDefault">0</integer>
+    <integer name="config_singleTapDefault">0</integer>
+    <integer name="config_drawVDefault">0</integer>
+    <integer name="config_drawInverseVDefault">0</integer>
+    <integer name="config_drawODefault">0</integer>
+    <integer name="config_drawMDefault">0</integer>
+    <integer name="config_drawWDefault">0</integer>
+    <integer name="config_drawSDefault">0</integer>
+    <integer name="config_drawArrowLeftDefault">0</integer>
+    <integer name="config_drawArrowRightDefault">0</integer>
+    <integer name="config_oneFingerSwipeUpDefault">0</integer>
+    <integer name="config_oneFingerSwipeRightDefault">0</integer>
+    <integer name="config_oneFingerSwipeDownDefault">0</integer>
+    <integer name="config_oneFingerSwipeLeftDefault">0</integer>
+    <integer name="config_twoFingerSwipeDefault">0</integer>
+
+    <!-- KeaHandler to intercept inputs on screen off. -->
+    <bool name="config_enableKeyHandler">false</bool>
+
     <!-- Defines the sysfs attribute path used by the device
          to enable/disable DC dimming. -->
     <string name="config_deviceDcDimmingSysfsNode"></string>

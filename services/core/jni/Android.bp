@@ -211,6 +211,7 @@ cc_defaults {
         "android.system.suspend-V1-ndk",
         "server_configurable_flags",
         "service.incremental",
+        "vendor.aospa.power-V1-cpp",
     ],
 
     static_libs: [

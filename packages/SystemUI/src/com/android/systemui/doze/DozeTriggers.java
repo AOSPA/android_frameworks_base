@@ -22,6 +22,8 @@ import static com.android.systemui.doze.DozeMachine.State.DOZE_SUSPEND_TRIGGERS;
 import static com.android.systemui.doze.DozeMachine.State.FINISH;
 import static com.android.systemui.doze.DozeMachine.State.UNINITIALIZED;
 
+import static android.hardware.display.AmbientDisplayConfiguration.DOZE_NO_PROXIMITY_CHECK;
+
 import android.annotation.Nullable;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -655,7 +657,8 @@ public class DozeTriggers implements DozeMachine.Part {
         public void onReceive(Context context, Intent intent) {
             if (PULSE_ACTION.equals(intent.getAction())) {
                 if (DozeMachine.DEBUG) Log.d(TAG, "Received pulse intent");
-                requestPulse(DozeLog.PULSE_REASON_INTENT, false, /* performedProxCheck */
+                final int noProxCheck = intent.getIntExtra(DOZE_NO_PROXIMITY_CHECK, 0);
+                requestPulse(DozeLog.PULSE_REASON_INTENT, noProxCheck == 1, /* performedProxCheck */
                         null /* onPulseSuppressedListener */);
             }
         }

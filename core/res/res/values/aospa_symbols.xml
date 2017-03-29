@@ -30,6 +30,42 @@
     <java-symbol type="array" name="config_deviceKeyHandlerLibs" />
     <java-symbol type="array" name="config_deviceKeyHandlerClasses" />
 
+    <!-- Gestures Settings -->
+    <java-symbol type="integer" name="config_doubleTapKeyCode" />
+    <java-symbol type="integer" name="config_singleTapKeyCode" />
+    <java-symbol type="integer" name="config_drawVKeyCode" />
+    <java-symbol type="integer" name="config_drawInverseVKeyCode" />
+    <java-symbol type="integer" name="config_drawOKeyCode" />
+    <java-symbol type="integer" name="config_drawMKeyCode" />
+    <java-symbol type="integer" name="config_drawWKeyCode" />
+    <java-symbol type="integer" name="config_drawSKeyCode" />
+    <java-symbol type="integer" name="config_drawArrowLeftKeyCode" />
+    <java-symbol type="integer" name="config_drawArrowRightKeyCode" />
+    <java-symbol type="integer" name="config_oneFingerSwipeUpKeyCode" />
+    <java-symbol type="integer" name="config_oneFingerSwipeRightKeyCode" />
+    <java-symbol type="integer" name="config_oneFingerSwipeDownKeyCode" />
+    <java-symbol type="integer" name="config_oneFingerSwipeLeftKeyCode" />
+    <java-symbol type="integer" name="config_twoFingerSwipeKeyCode" />
+
+    <java-symbol type="integer" name="config_doubleTapDefault" />
+    <java-symbol type="integer" name="config_singleTapDefault" />
+    <java-symbol type="integer" name="config_drawVDefault" />
+    <java-symbol type="integer" name="config_drawInverseVDefault" />
+    <java-symbol type="integer" name="config_drawODefault" />
+    <java-symbol type="integer" name="config_drawMDefault" />
+    <java-symbol type="integer" name="config_drawWDefault" />
+    <java-symbol type="integer" name="config_drawSDefault" />
+    <java-symbol type="integer" name="config_drawArrowLeftDefault" />
+    <java-symbol type="integer" name="config_drawArrowRightDefault" />
+    <java-symbol type="integer" name="config_oneFingerSwipeUpDefault" />
+    <java-symbol type="integer" name="config_oneFingerSwipeRightDefault" />
+    <java-symbol type="integer" name="config_oneFingerSwipeDownDefault" />
+    <java-symbol type="integer" name="config_oneFingerSwipeLeftDefault" />
+    <java-symbol type="integer" name="config_twoFingerSwipeDefault" />
+
+    <!-- Whether to to intercept inputs on screen off. -->
+    <java-symbol type="bool" name="config_enableKeyHandler" />
+
     <!-- DC Dimming -->
     <java-symbol type="string" name="config_deviceDcDimmingSysfsNode" />
     <java-symbol type="string" name="config_deviceDcDimmingEnableValue" />
