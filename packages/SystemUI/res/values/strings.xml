@@ -4494,7 +4494,7 @@
     <!-- Label for area where tiles can be dragged out of [CHAR LIMIT=60] -->
 <!-- QTI_BEGIN: 2022-03-27: Telephony: Add conditions to prevent disabling of mobile data-->
 <!-- QTI_END: 2022-03-27: Telephony: Add conditions to prevent disabling of mobile data-->
-    <string name="drag_to_add_tiles">Hold and drag to add tiles</string>
+    <string name="drag_to_add_tiles">Press on tiles to add or remove</string>
 
     <!-- Label for header of customize QS [CHAR LIMIT=60] -->
 <!-- QTI_BEGIN: 2022-03-27: Telephony: Add conditions to prevent disabling of mobile data-->
