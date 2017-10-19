@@ -19,23 +19,22 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.MenuItem;
 
 import androidx.preference.Preference;
-import androidx.preference.Preference.OnPreferenceChangeListener;
-import androidx.preference.PreferenceFragment;
 import androidx.preference.PreferenceScreen;
 import androidx.preference.SwitchPreference;
 
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+import com.android.settingslib.widget.SettingsBasePreferenceFragment;
 import com.android.systemui.demomode.DemoMode;
 import com.android.systemui.demomode.DemoModeAvailabilityTracker;
 import com.android.systemui.demomode.DemoModeController;
 import com.android.systemui.res.R;
 import com.android.systemui.util.settings.GlobalSettings;
 
-public class DemoModeFragment extends PreferenceFragment implements OnPreferenceChangeListener {
+public class DemoModeFragment extends SettingsBasePreferenceFragment
+        implements Preference.OnPreferenceChangeListener {
 
     private static final String[] STATUS_ICONS = {
         "volume",
@@ -87,18 +86,6 @@ public class DemoModeFragment extends PreferenceFragment implements OnPreference
         mDemoModeTracker.startTracking();
         updateDemoModeEnabled();
         updateDemoModeOn();
-
-        setHasOptionsMenu(true);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                getFragmentManager().popBackStack();
-                break;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

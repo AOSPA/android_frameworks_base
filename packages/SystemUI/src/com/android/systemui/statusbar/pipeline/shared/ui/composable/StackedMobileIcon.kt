@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -52,6 +53,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.android.systemui.common.ui.compose.load
@@ -212,6 +214,7 @@ private fun CustomMobileGroupIcon(viewModel: MobileIconViewModelCommon) {
     val contentColor = LocalContentColor.current
 
     val height = with(LocalDensity.current) { IconHeightSp.toDp() }
+    val spacing = with(LocalDensity.current) { IconSpacingSp.toDp() }
     if (volteId != 0) {
         val volteHeight = with(LocalDensity.current) {
             StackedMobileIconDimensions.VolteIconHeightSp.toDp() }
@@ -222,6 +225,7 @@ private fun CustomMobileGroupIcon(viewModel: MobileIconViewModelCommon) {
             colorFilter = ColorFilter.tint(contentColor, BlendMode.SrcIn),
             contentScale = ContentScale.FillHeight,
         )
+        Spacer(Modifier.width(3.5.dp))
     }
 
     if (activityContainerVisible) {

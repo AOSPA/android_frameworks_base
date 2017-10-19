@@ -60,6 +60,7 @@ public class StatusBarSignalPolicy
     private boolean mHideAirplane;
     private boolean mHideMobile;
     private boolean mHideEthernet;
+    private boolean mHideVpn;
 
 
     @Inject
@@ -98,7 +99,7 @@ public class StatusBarSignalPolicy
     }
 
     private void updateVpn() {
-        boolean vpnVisible = mSecurityController.isVpnEnabled();
+        boolean vpnVisible = mSecurityController.isVpnEnabled() && !mHideVpn;
         int vpnIconId = currentVpnIconId(
                 mSecurityController.isVpnBranded(),
                 mSecurityController.isVpnValidated());
@@ -137,12 +138,15 @@ public class StatusBarSignalPolicy
         boolean hideAirplane = hideList.contains(mSlotAirplane);
         boolean hideMobile = hideList.contains(mSlotMobile);
         boolean hideEthernet = hideList.contains(mSlotEthernet);
+        boolean hideVpn = hideList.contains(mSlotVpn);
 
         if (hideAirplane != mHideAirplane || hideMobile != mHideMobile
-                || hideEthernet != mHideEthernet) {
+                || hideEthernet != mHideEthernet || hideVpn != mHideVpn) {
             mHideAirplane = hideAirplane;
             mHideMobile = hideMobile;
             mHideEthernet = hideEthernet;
+            mHideVpn = hideVpn;
+            mHandler.post(this::updateVpn);
         }
     }
 

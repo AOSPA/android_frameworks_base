@@ -150,14 +150,12 @@ public class TunerServiceImpl extends TunerService {
 
                 iconHideList.add("rotate");
                 iconHideList.add("headset");
+                iconHideList.add("nfc");
 
                 Settings.Secure.putStringForUser(mContentResolver,
                         StatusBarIconController.ICON_HIDE_LIST,
                         TextUtils.join(",", iconHideList), mCurrentUser);
             }
-        }
-        if (oldVersion < 2) {
-            setTunerEnabled(false);
         }
         // 3 Removed because of a revert.
         if (oldVersion < 4) {

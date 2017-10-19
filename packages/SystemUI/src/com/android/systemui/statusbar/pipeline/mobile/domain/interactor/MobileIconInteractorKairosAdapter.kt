@@ -124,11 +124,44 @@ fun BuildScope.MobileIconInteractorKairosAdapter(
                 isRoaming.toStateFlow(
                     nameTag { "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isRoaming" }
                 ),
+            isRoamingForceHidden =
+                isRoamingForceHidden.toStateFlow(
+                    name =
+                        nameTag {
+                            "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isRoamingForceHidden"
+                        }
+                ),
             isForceHidden =
                 isForceHidden.toStateFlow(
                     name =
                         nameTag {
                             "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isForceHidden"
+                        }
+                ),
+            isMobileHd =
+                isMobileHd.toStateFlow(
+                    nameTag {
+                        "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isMobileHd"
+                    }
+                ),
+            isMobileHdForceHidden =
+                isMobileHdForceHidden.toStateFlow(
+                    name =
+                        nameTag {
+                            "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isMobileHdForceHidden"
+                        }
+                ),
+            isVoWifi =
+                isVoWifi.toStateFlow(
+                    nameTag {
+                        "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isVoWifi"
+                    }
+                ),
+            isVoWifiForceHidden =
+                isVoWifiForceHidden.toStateFlow(
+                    name =
+                        nameTag {
+                            "MobileIconInteractorKairosAdapter(subId=$subscriptionId).isVoWifiForceHidden"
                         }
                 ),
             isAllowedDuringAirplaneMode =
@@ -164,7 +197,12 @@ private class MobileIconInteractorKairosAdapter(
     override val carrierName: StateFlow<String>,
     override val isSingleCarrier: StateFlow<Boolean>,
     override val isRoaming: StateFlow<Boolean>,
+    override val isRoamingForceHidden: StateFlow<Boolean>,
     override val isForceHidden: StateFlow<Boolean>,
+    override val isMobileHd: StateFlow<Boolean>,
+    override val isMobileHdForceHidden: StateFlow<Boolean>,
+    override val isVoWifi: StateFlow<Boolean>,
+    override val isVoWifiForceHidden: StateFlow<Boolean>,
     override val isAllowedDuringAirplaneMode: StateFlow<Boolean>,
     override val carrierNetworkChangeActive: StateFlow<Boolean>,
 ) : MobileIconInteractor {

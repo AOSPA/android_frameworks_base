@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SPDX-FileCopyrightText: 2022-2024 Paranoid Android
+   SPDX-License-Identifier: Apache-2.0
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- Status bar -->
+    <string name="status_bar_icons_title">Status bar icons</string>
+    <string name="status_bar_hd_calling">HD calling (VoLTE/VoNR)</string>
+    <string name="status_bar_nfc">NFC</string>
+    <string name="status_bar_roaming">Roaming indicator</string>
+    <string name="status_bar_vowifi">Wi-Fi calling (VoWiFi)</string>
+
+</resources>

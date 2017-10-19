@@ -100,7 +100,6 @@ constructor(
         subscriptionIdsFlow
             .map { ids -> ids.map { commonViewModelForSub(it) } }
             .stateIn(scope, SharingStarted.WhileSubscribed(), emptyList())
-
     /** Whether all of [mobileSubViewModels] are visible or not. */
     private val iconsAreAllVisible =
         mobileSubViewModels

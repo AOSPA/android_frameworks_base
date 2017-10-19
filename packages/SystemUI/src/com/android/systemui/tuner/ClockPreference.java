@@ -18,13 +18,13 @@ import android.text.TextUtils;
 import android.util.ArraySet;
 import android.util.AttributeSet;
 
-import androidx.preference.DropDownPreference;
+import androidx.preference.ListPreference;
 
 import com.android.systemui.Dependency;
 import com.android.systemui.statusbar.phone.ui.StatusBarIconController;
 import com.android.systemui.statusbar.policy.Clock;
 
-public class ClockPreference extends DropDownPreference implements TunerService.Tunable {
+public class ClockPreference extends ListPreference implements TunerService.Tunable {
 
     private static final String SECONDS = "seconds";
     private static final String DEFAULT = "default";
