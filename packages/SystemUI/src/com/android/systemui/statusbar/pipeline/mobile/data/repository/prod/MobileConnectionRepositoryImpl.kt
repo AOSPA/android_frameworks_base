@@ -101,6 +101,8 @@ import com.android.systemui.log.table.TableLogBuffer
 // QTI_BEGIN: 2023-04-01: Data: SystemUI: Readapt network type icon customization
 import com.android.systemui.log.table.logDiffsForTable
 // QTI_END: 2023-04-01: Data: SystemUI: Readapt network type icon customization
+import com.android.systemui.statusbar.pipeline.ims.data.model.ImsStateModel
+import com.android.systemui.statusbar.pipeline.ims.data.repository.ImsRepository
 import com.android.systemui.statusbar.pipeline.mobile.data.MobileInputLogger
 import com.android.systemui.statusbar.pipeline.mobile.data.model.DataConnectionState.Disconnected
 import com.android.systemui.statusbar.pipeline.mobile.data.model.NetworkNameModel
@@ -188,6 +190,7 @@ class MobileConnectionRepositoryImpl(
 // QTI_BEGIN: 2024-04-17: Data: SystemUI: Fix ImsStateCallback registration failure issue
     slotIndexForSubId:  Flow<Int>? = null,
 // QTI_END: 2024-04-17: Data: SystemUI: Fix ImsStateCallback registration failure issue
+    private val imsRepository: ImsRepository,
 ) : MobileConnectionRepository {
     init {
         if (telephonyManager.subscriptionId != subId) {
@@ -941,6 +944,8 @@ class MobileConnectionRepositoryImpl(
     /** Typical mobile connections aren't available during airplane mode. */
     override val isAllowedDuringAirplaneMode = MutableStateFlow(false).asStateFlow()
 
+    override val imsState: StateFlow<ImsStateModel> = imsRepository.imsState
+
     /**
      * Currently, a network with NET_CAPABILITY_PRIORITIZE_LATENCY is the only type of network that
      * we consider to be a "network slice". _PRIORITIZE_BANDWIDTH may be added in the future. Any of
@@ -1005,6 +1010,7 @@ class MobileConnectionRepositoryImpl(
 // QTI_BEGIN: 2024-04-17: Data: SystemUI: Fix ImsStateCallback registration failure issue
             slotIndexForSubId:  Flow<Int>? = null,
 // QTI_END: 2024-04-17: Data: SystemUI: Fix ImsStateCallback registration failure issue
+            imsRepository: ImsRepository,
         ): MobileConnectionRepository {
             return MobileConnectionRepositoryImpl(
                 subId,
@@ -1028,6 +1034,7 @@ class MobileConnectionRepositoryImpl(
 // QTI_BEGIN: 2024-04-17: Data: SystemUI: Fix ImsStateCallback registration failure issue
                 slotIndexForSubId,
 // QTI_END: 2024-04-17: Data: SystemUI: Fix ImsStateCallback registration failure issue
+                imsRepository,
             )
         }
     }
