@@ -79,6 +79,7 @@ interface MobileIconViewModelCommon {
 // QTI_BEGIN: 2023-04-23: Android_UI: SystemUI: Fix VoWifi icon dose not display
     val showSignalStrengthIcon: Flow<Boolean>
 // QTI_END: 2023-04-23: Android_UI: SystemUI: Fix VoWifi icon dose not display
+    val showHd: Flow<Boolean>
 }
 /**
  * View model for the state of a single mobile icon. Each [MobileIconViewModel] will keep watch over
@@ -153,9 +154,9 @@ class MobileIconViewModel(
         vmProvider.flatMapLatest { it.activityContainerVisible }
     override val volteId: Flow<Int> =
         vmProvider.flatMapLatest { it.volteId }
-
     override val showSignalStrengthIcon: Flow<Boolean> =
         vmProvider.flatMapLatest { it.showSignalStrengthIcon }
+    override val showHd: Flow<Boolean> = vmProvider.flatMapLatest { it.showHd }
 }
 /** Representation of this network when it is non-terrestrial (e.g., satellite) */
 private class CarrierBasedSatelliteViewModelImpl(
@@ -179,6 +180,7 @@ private class CarrierBasedSatelliteViewModelImpl(
     override val activityContainerVisible: Flow<Boolean> = flowOf(false)
     override val volteId: Flow<Int> = flowOf(0)
     override val showSignalStrengthIcon: Flow<Boolean> = flowOf(true)
+    override val showHd: Flow<Boolean> = flowOf(false)
 }
 /** Terrestrial (cellular) icon. */
 @Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
@@ -427,4 +429,29 @@ private class CellularIconViewModel(
                 && mode.mobileDataEnabled && (mode.dataRoamingEnabled || !mode.isRoaming))
     }
 // QTI_END: 2023-04-01: Android_UI: SystemUI: Readapt network type icon customization
+
+    private val showVoWifi: StateFlow<Boolean> =
+        combine(
+                iconInteractor.isVoWifi,
+                iconInteractor.isVoWifiForceHidden
+            ) { isVoWifi, isHidden ->
+                // If it's force hidden, just hide.
+                // Otherwise follow VoWifi state
+                isVoWifi && !isHidden
+            }
+            .distinctUntilChanged()
+            .stateIn(scope, SharingStarted.WhileSubscribed(), false)
+
+    override val showHd: StateFlow<Boolean> =
+        combine(
+                iconInteractor.isMobileHd,
+                iconInteractor.isMobileHdForceHidden,
+                showVoWifi,
+            ) { isHd, isHidden, voWifi ->
+                // If it's force hidden or VoWifi available, just hide.
+                // Otherwise follow HD state
+                isHd && !(isHidden || voWifi)
+            }
+            .distinctUntilChanged()
+            .stateIn(scope, SharingStarted.WhileSubscribed(), false)
 }

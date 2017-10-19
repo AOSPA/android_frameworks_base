@@ -100,6 +100,18 @@ constructor(
         kairosInteractor.isStackable
             .toColdConflatedFlow(kairosNetwork)
             .stateIn(scope, SharingStarted.WhileSubscribed(), false)
+    override val isMobileHdForceHidden: Flow<Boolean> =
+        kairosInteractor.isMobileHdForceHidden
+            .toColdConflatedFlow(kairosNetwork)
+            .stateIn(scope, SharingStarted.WhileSubscribed(), true)
+    override val isVoWifiForceHidden: Flow<Boolean> =
+        kairosInteractor.isVoWifiForceHidden
+            .toColdConflatedFlow(kairosNetwork)
+            .stateIn(scope, SharingStarted.WhileSubscribed(), true)
+    override val isRoamingForceHidden: Flow<Boolean> =
+        kairosInteractor.isRoamingForceHidden
+            .toColdConflatedFlow(kairosNetwork)
+            .stateIn(scope, SharingStarted.WhileSubscribed(), false)
     override val activeMobileDataSubscriptionId: StateFlow<Int?>
         get() = repo.activeMobileDataSubscriptionId
     override val activeDataConnectionHasDataEnabled: StateFlow<Boolean> =
@@ -177,6 +189,11 @@ constructor(
             override val isSingleCarrier: Flow<Boolean> = latest { isSingleCarrier }
             override val isRoaming: Flow<Boolean> = latest { isRoaming }
             override val isForceHidden: Flow<Boolean> = latest { isForceHidden }
+            override val isRoamingForceHidden: Flow<Boolean> = latest { isRoamingForceHidden }
+            override val isMobileHd: Flow<Boolean> = latest { isMobileHd }
+            override val isMobileHdForceHidden: Flow<Boolean> = latest { isMobileHdForceHidden }
+            override val isVoWifi: Flow<Boolean> = latest { isVoWifi }
+            override val isVoWifiForceHidden: Flow<Boolean> = latest { isVoWifiForceHidden }
 
             override val isConnectionFailed = latest { isConnectionFailed }
             override val customizedNetworkName = latest { customizedNetworkName }
