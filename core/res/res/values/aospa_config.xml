@@ -32,4 +32,7 @@
     <!-- Whether to use Richtap vibration -->
     <bool name="config_usesRichtapVibration">false</bool>
 
+    <!-- Whether device has an alert slider. -->
+    <bool name="config_hasAlertSlider">false</bool>
+
 </resources>
