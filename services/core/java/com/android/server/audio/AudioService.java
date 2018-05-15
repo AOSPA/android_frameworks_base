@@ -249,6 +249,7 @@ import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.Toast;
 
+import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.os.SomeArgs;
@@ -1217,6 +1218,9 @@ public class AudioService extends IAudioService.Stub
     private @AttributeSystemUsage int[] mSupportedSystemUsages =
             new int[]{AudioAttributes.USAGE_CALL_ASSISTANT};
 
+    // Alert Slider
+    private boolean mHasAlertSlider = false;
+
     // Tracks the API/shell override of hardening enforcement used for debugging
     // When this is set to true, enforcement is on regardless of flag state and any specific
     // exemptions in place for compat purposes.
@@ -1405,6 +1409,10 @@ public class AudioService extends IAudioService.Stub
 
         mUseVolumeGroupAliases = mContext.getResources().getBoolean(
                 com.android.internal.R.bool.config_handleVolumeAliasesUsingVolumeGroups);
+
+        mHasAlertSlider = mContext.getResources().getBoolean(R.bool.config_hasAlertSlider)
+                && !TextUtils.isEmpty(mContext.getResources().getString(R.string.alert_slider_state_path))
+                && !TextUtils.isEmpty(mContext.getResources().getString(R.string.alert_slider_uevent_match_path));
 
         mAudioVolumeChangeHandler = new AudioVolumeChangeHandler(mAudioSystem);
         // Initialize volume
@@ -3939,6 +3947,27 @@ public class AudioService extends IAudioService.Stub
                     streamType = mVolumeControlStream;
                 }
 // QTI_END: 2018-01-16: Audio: AudioService: synchronize access to user selected volume ctrl stream
+            }
+        }
+
+        if (mHasAlertSlider) {
+            int volumeType = sStreamVolumeAlias.get(streamType, /*valueIfKeyNotFound=*/-1);
+            VolumeStreamState volumeState = getVssForStreamOrDefault(volumeType);
+            int state = getDeviceForStream(volumeType);
+            int index = volumeState.getIndex(state);
+            int ringerMode = getRingerModeInternal();
+            if ((volumeType == AudioSystem.STREAM_RING)
+                    && (direction == AudioManager.ADJUST_LOWER)
+                    && (index == 0)) {
+                direction = AudioManager.ADJUST_SAME;
+            }
+            if ((ringerMode == AudioManager.RINGER_MODE_SILENT)
+                    && (direction == AudioManager.ADJUST_RAISE
+                    && volumeType != AudioSystem.STREAM_MUSIC
+                    && volumeType != AudioSystem.STREAM_ALARM
+                    && volumeType != AudioSystem.STREAM_VOICE_CALL
+                    && !isInCommunication())) {
+                direction = AudioManager.ADJUST_SAME;
             }
         }
 
