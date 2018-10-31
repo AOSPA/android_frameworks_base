@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2024 Paranoid Android
+     SPDX-License-Identifier: Apache-2.0
+-->
+<level-list xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:maxLevel="0" android:drawable="@drawable/ic_bluetooth_battery_0" />
+    <item android:maxLevel="10" android:drawable="@drawable/ic_bluetooth_battery_1" />
+    <item android:maxLevel="20" android:drawable="@drawable/ic_bluetooth_battery_2" />
+    <item android:maxLevel="30" android:drawable="@drawable/ic_bluetooth_battery_3" />
+    <item android:maxLevel="40" android:drawable="@drawable/ic_bluetooth_battery_4" />
+    <item android:maxLevel="50" android:drawable="@drawable/ic_bluetooth_battery_5" />
+    <item android:maxLevel="60" android:drawable="@drawable/ic_bluetooth_battery_6" />
+    <item android:maxLevel="70" android:drawable="@drawable/ic_bluetooth_battery_7" />
+    <item android:maxLevel="80" android:drawable="@drawable/ic_bluetooth_battery_8" />
+    <item android:maxLevel="90" android:drawable="@drawable/ic_bluetooth_battery_9" />
+    <item android:maxLevel="100" android:drawable="@drawable/ic_bluetooth_battery_10" />
+</level-list>
