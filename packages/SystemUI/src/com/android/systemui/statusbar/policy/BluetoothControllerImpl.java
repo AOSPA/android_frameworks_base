@@ -18,6 +18,7 @@ package com.android.systemui.statusbar.policy;
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Handler;
@@ -79,6 +80,7 @@ public class BluetoothControllerImpl implements BluetoothController, BluetoothCa
     private int mConnectionState = BluetoothAdapter.STATE_DISCONNECTED;
     private boolean mAudioProfileOnly;
     private boolean mIsActive;
+    private int mBatteryLevel;
 
     private final H mHandler;
     private int mState;
@@ -134,6 +136,7 @@ public class BluetoothControllerImpl implements BluetoothController, BluetoothCa
         pw.print("  mEnabled="); pw.println(mEnabled);
         pw.print("  mConnectionState="); pw.println(connectionStateToString(mConnectionState));
         pw.print("  mAudioProfileOnly="); pw.println(mAudioProfileOnly);
+        pw.print("  mBatteryLevel="); pw.println(mBatteryLevel);
         pw.print("  mIsActive="); pw.println(mIsActive);
         pw.print("  mConnectedDevices="); pw.println(getConnectedDevices());
         pw.print("  mCallbacks.size="); pw.println(mHandler.mCallbacks.size());
@@ -285,6 +288,7 @@ public class BluetoothControllerImpl implements BluetoothController, BluetoothCa
             mHandler.sendEmptyMessage(H.MSG_STATE_CHANGED);
         }
         updateAudioProfile();
+        updateBattery();
     }
 
     private void updateActive() {
@@ -331,6 +335,28 @@ public class BluetoothControllerImpl implements BluetoothController, BluetoothCa
                 mHandler.sendEmptyMessage(H.MSG_STATE_CHANGED);
             }
         });
+    }
+
+    @Override
+    public int getBatteryLevel() {
+        synchronized (mConnectedDevices) {
+            if (mConnectedDevices.isEmpty()) {
+                return BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+            }
+            return mConnectedDevices.stream()
+                .mapToInt(device -> device.getBatteryLevel())
+                .filter(level -> level != BluetoothDevice.BATTERY_LEVEL_UNKNOWN)
+                .findFirst()
+                .orElse(BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
+        }
+    }
+
+    private void updateBattery() {
+        int batteryLevel = getBatteryLevel();
+        if (batteryLevel != mBatteryLevel) {
+            mBatteryLevel = batteryLevel;
+            mHandler.sendEmptyMessage(H.MSG_STATE_CHANGED);
+        }
     }
 
     @Override
