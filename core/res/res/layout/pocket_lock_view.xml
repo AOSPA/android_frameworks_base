@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2021 Wave-OS
+     SPDX-FileCopyrightText: 2024 Paranoid Android
+     SPDX-License-Identifier: Apache-2.0
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pocket_mode_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone">
+
+    <View
+        android:id="@+id/background_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black" />
+
+    <LinearLayout
+        android:id="@+id/pocket_mode_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/pocket_mode_title"
+            style="@style/PocketModeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/pocket_mode_title_margin_horizontal"
+            android:gravity="center_horizontal"
+            android:text="@string/pocket_mode_title" />
+
+        <ImageView
+            android:id="@+id/pocket_mode_illustration"
+            android:layout_width="@dimen/pocket_mode_illustration_width"
+            android:layout_height="@dimen/pocket_mode_illustration_height"
+            android:layout_marginTop="@dimen/pocket_mode_illustration_margin_top"
+            android:contentDescription="@string/pocket_mode_illustration_description"
+            android:src="@drawable/pocket_mode_illustration" />
+
+        <LinearLayout
+            android:id="@+id/pocket_mode_instructions_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/pocket_mode_instructions_container_margin_horizontal"
+            android:layout_marginTop="@dimen/pocket_mode_instructions_container_margin_top"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/pocket_mode_instructions_title"
+                style="@style/PocketModeInstructionsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/pocket_mode_instructions_header" />
+
+            <LinearLayout
+                android:id="@+id/pocket_mode_instructions_steps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/pocket_mode_instructions_steps_margin_top"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/pocket_mode_instruction_step1"
+                    style="@style/PocketModeInstructionStep"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pocket_mode_instruction_step1" />
+
+                <TextView
+                    android:id="@+id/pocket_mode_instruction_step2"
+                    style="@style/PocketModeInstructionStep"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pocket_mode_instructions_step_margin_top"
+                    android:text="@string/pocket_mode_instruction_step2" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>
