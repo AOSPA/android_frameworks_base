@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2021 Paranoid Android
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<resources>
+
+    <!-- Pocket Mode -->
+    <dimen name="pocket_mode_illustration_width">175dp</dimen>
+    <dimen name="pocket_mode_illustration_height">350dp</dimen>
+    <dimen name="pocket_mode_illustration_margin_top">56dp</dimen>
+    <dimen name="pocket_mode_title_size">24sp</dimen>
+    <dimen name="pocket_mode_title_margin_horizontal">56dp</dimen>
+    <dimen name="pocket_mode_instructions_container_margin_horizontal">24dp</dimen>
+    <dimen name="pocket_mode_instructions_container_margin_top">56dp</dimen>
+    <dimen name="pocket_mode_instructions_title_size">16sp</dimen>
+    <dimen name="pocket_mode_instructions_steps_margin_top">8dp</dimen>
+    <dimen name="pocket_mode_instructions_step_size">14sp</dimen>
+    <dimen name="pocket_mode_instructions_step_margin_top">8dp</dimen>
+
+</resources>

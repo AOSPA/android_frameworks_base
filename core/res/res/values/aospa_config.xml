@@ -43,4 +43,16 @@
     <string-array name="config_deviceKeyHandlerClasses" translatable="false">
     </string-array>
 
+    <!-- Pocket Lock -->
+    <bool name="config_pocketModeSupported">true</bool>
+    <bool name="config_pocketModeLightSensorSupported">true</bool>
+
+    <!-- Defines custom OEM sensor for pocket detection. -->
+    <string name="config_pocketJudgeVendorSensorName" translatable="false"></string>
+    <item name="config_pocketJudgeVendorSensorValue" format="float" type="dimen">1.0</item>
+
+    <!-- Defines the sysfs attribute path used by pocket bridge
+         to communicate pocket state to the pocket judge kernel driver. -->
+    <string name="config_pocketBridgeSysfsInpocket" translatable="false"></string>
+
 </resources>
