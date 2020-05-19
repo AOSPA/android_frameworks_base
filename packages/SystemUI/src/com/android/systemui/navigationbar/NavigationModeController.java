@@ -17,6 +17,7 @@
 package com.android.systemui.navigationbar;
 
 import static android.content.Intent.ACTION_OVERLAY_CHANGED;
+import static android.view.WindowManagerPolicyConstants.NAV_BAR_MODE_GESTURAL;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -25,6 +26,8 @@ import android.content.IntentFilter;
 import android.content.om.IOverlayManager;
 import android.content.pm.PackageManager;
 import android.content.res.ApkAssets;
+import android.database.ContentObserver;
+import android.net.Uri;
 import android.os.PatternMatcher;
 import android.os.RemoteException;
 import android.os.ServiceManager;
@@ -35,6 +38,7 @@ import android.provider.Settings.Secure;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.android.systemui.Dumpable;
 import com.android.systemui.dagger.SysUISingleton;
@@ -71,6 +75,16 @@ public class NavigationModeController implements Dumpable {
 
     private ArrayList<ModeChangedListener> mListeners = new ArrayList<>();
 
+    private static final String OVERLAY_NAVIGATION_HIDE_HINT =
+            "co.aospa.overlay.systemui.immnav.gestural";
+
+    private final ContentObserver mContentObserver = new ContentObserver(null) {
+        @Override
+        public void onChange(boolean selfChange, @Nullable Uri uri) {
+            updateHint();
+        }
+    };
+
     private final UserTracker.Callback mUserTrackerCallback = new UserTracker.Callback() {
         @Override
         public void onUserChanged(int newUser, @NonNull Context userContext) {
@@ -80,6 +94,7 @@ public class NavigationModeController implements Dumpable {
             }
 
             updateCurrentInteractionMode(true /* notify */);
+            updateHint();
         }
     };
 
@@ -118,6 +133,12 @@ public class NavigationModeController implements Dumpable {
         overlayFilter.addDataSchemeSpecificPart("android", PatternMatcher.PATTERN_LITERAL);
         mContext.registerReceiverAsUser(mReceiver, UserHandle.ALL, overlayFilter, null, null);
 
+        mContext.getContentResolver().registerContentObserver(
+                Settings.Secure.getUriFor(Settings.Secure.NAVIGATION_BAR_HINT),
+                false,
+                mContentObserver,
+                UserHandle.USER_ALL);
+
         configurationController.addCallback(new ConfigurationController.ConfigurationListener() {
             @Override
             public void onThemeChanged() {
@@ -129,6 +150,27 @@ public class NavigationModeController implements Dumpable {
         });
 
         updateCurrentInteractionMode(false /* notify */);
+        updateHint();
+    }
+
+    private void updateHint() {
+        mUiBgExecutor.execute(() -> {
+            final int userId = mUserTracker.getUserId();
+            final int mode = getCurrentInteractionMode(mCurrentUserContext);
+            final boolean isHintDisabled = Settings.Secure.getIntForUser(
+                    mCurrentUserContext.getContentResolver(),
+                    Settings.Secure.NAVIGATION_BAR_HINT, 0, userId) != 0;
+            final boolean state = mode == NAV_BAR_MODE_GESTURAL && isHintDisabled;
+            try {
+                mOverlayManager.setEnabled(OVERLAY_NAVIGATION_HIDE_HINT, state, userId);
+                if (state) {
+                    mOverlayManager.setHighestPriority(OVERLAY_NAVIGATION_HIDE_HINT, userId);
+                }
+            } catch (IllegalArgumentException | RemoteException e) {
+                Log.e(TAG, "Failed to " + (state ? "enable" : "disable")
+                        + " overlay " + OVERLAY_NAVIGATION_HIDE_HINT + " for user " + userId, e);
+            }
+        });
     }
 
     public void updateCurrentInteractionMode(boolean notify) {
@@ -138,6 +180,7 @@ public class NavigationModeController implements Dumpable {
         mUiBgExecutor.execute(() ->
             Settings.Secure.putString(mCurrentUserContext.getContentResolver(),
                     Secure.NAVIGATION_MODE, String.valueOf(mode)));
+        updateHint();
         if (DEBUG) {
             Log.d(TAG, "updateCurrentInteractionMode: mode=" + mode);
             dumpAssetPaths(mCurrentUserContext);
