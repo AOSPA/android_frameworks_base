@@ -19,4 +19,9 @@
     <!-- Whether to use Richtap vibration -->
     <java-symbol type="bool" name="config_usesRichtapVibration" />
 
+    <!-- DC Dimming -->
+    <java-symbol type="string" name="config_deviceDcDimmingSysfsNode" />
+    <java-symbol type="string" name="config_deviceDcDimmingEnableValue" />
+    <java-symbol type="string" name="config_deviceDcDimmingDisableValue" />
+
 </resources>
