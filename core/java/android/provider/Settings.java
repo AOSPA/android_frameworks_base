@@ -1158,6 +1158,21 @@ public final class Settings {
             "android.settings.NIGHT_DISPLAY_SETTINGS";
 
     /**
+     * Activity Action: Show settings to allow configuration of DC Dimming.
+     * <p>
+     * In some cases, a matching Activity may not exist, so ensure you
+     * safeguard against this.
+     * <p>
+     * Input: Nothing.
+     * <p>
+     * Output: Nothing.
+     * @hide
+     */
+    @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
+    public static final String ACTION_DC_DIMMING_SETTINGS =
+            "android.settings.DC_DIMMING_SETTINGS";
+
+    /**
      * Activity Action: Show settings to allow configuration of Dark theme.
      * <p>
      * In some cases, a matching Activity may not exist, so ensure you
@@ -5300,6 +5315,22 @@ public final class Settings {
          * SCREEN_BRIGHTNESS_MODE value for automatic mode.
          */
         public static final int SCREEN_BRIGHTNESS_MODE_AUTOMATIC = 1;
+
+        /**
+         * Indicates the state of DC dimming AUTO mode:
+         *   0 - Off
+         *   1 - On
+         * @hide
+         */
+        public static final String DC_DIMMING_AUTO_MODE = "dc_dimming_auto_mode";
+
+        /**
+         * Indicates the state of DC dimming:
+         *   0 - Off
+         *   1 - On
+         * @hide
+         */
+        public static final String DC_DIMMING_STATE = "dc_dimming_state";
 
         /**
          * Control whether to enable adaptive sleep mode.

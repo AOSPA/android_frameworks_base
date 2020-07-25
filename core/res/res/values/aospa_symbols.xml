@@ -84,4 +84,9 @@
     <!-- Whether to to intercept inputs on screen off. -->
     <java-symbol type="bool" name="config_enableKeyHandler" />
 
+    <!-- DC Dimming -->
+    <java-symbol type="string" name="config_deviceDcDimmingSysfsNode" />
+    <java-symbol type="string" name="config_deviceDcDimmingEnableValue" />
+    <java-symbol type="string" name="config_deviceDcDimmingDisableValue" />
+
 </resources>
