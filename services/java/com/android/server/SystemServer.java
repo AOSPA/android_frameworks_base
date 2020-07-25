@@ -157,6 +157,7 @@ import com.android.server.cpu.CpuMonitorService;
 import com.android.server.credentials.CredentialManagerService;
 import com.android.server.criticalevents.CriticalEventLog;
 import com.android.server.devicepolicy.DevicePolicyManagerService;
+import com.android.server.display.DcDimmingService;
 import com.android.server.devicestate.DeviceStateManagerService;
 import com.android.server.display.DisplayManagerService;
 import com.android.server.display.color.ColorDisplayService;
@@ -1710,6 +1711,15 @@ public final class SystemServer implements Dumpable {
                 t.traceBegin("ProfcollectForwardingService");
                 mSystemServiceManager.startService(ProfcollectForwardingService.class);
                 t.traceEnd();
+            }
+
+            if (!context.getResources().getString(R.string.config_deviceDcDimmingSysfsNode)
+                    .isEmpty()) {
+                t.traceBegin("StartDcDimmingService");
+                mSystemServiceManager.startService(DcDimmingService.class);
+                t.traceEnd();
+            } else {
+                Slog.i(TAG, "Dc Dimming not supported");
             }
 
             t.traceBegin("SignedConfigService");
