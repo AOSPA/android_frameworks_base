@@ -6346,6 +6346,12 @@ public final class Settings {
          * the setting value. See an example above.
          */
 
+       /**
+         * Whether or not volume button music controls should be enabled to seek media tracks
+         * @hide
+         */
+        public static final String VOLBTN_MUSIC_CONTROLS = "volbtn_music_controls";
+
         /**
         * Controls whether gestures are enabled.
         * @hide
