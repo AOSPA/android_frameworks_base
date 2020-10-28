@@ -6963,6 +6963,12 @@ public final class Settings {
          * the setting value. See an example above.
          */
 
+       /**
+         * Whether or not volume button music controls should be enabled to seek media tracks
+         * @hide
+         */
+        public static final String VOLBTN_MUSIC_CONTROLS = "volbtn_music_controls";
+
         /**
          * Whether allowing pocket service to register sensors and dispatch informations.
          *   0 = disabled
@@ -7245,6 +7251,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(ADAPTIVE_PLAYBACK_ENABLED);
             PRIVATE_SETTINGS.add(ADAPTIVE_PLAYBACK_TIMEOUT);
             PRIVATE_SETTINGS.add(TORCH_POWER_BUTTON_GESTURE);
+            PRIVATE_SETTINGS.add(VOLBTN_MUSIC_CONTROLS);
         }
 
         /**
