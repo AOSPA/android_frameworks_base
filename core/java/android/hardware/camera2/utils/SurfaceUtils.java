@@ -322,7 +322,7 @@ public class SurfaceUtils {
 // QTI_BEGIN: 2018-06-12: Camera: Skip HFR checks for privileged apps.
     private static boolean isPrivilegedApp() {
         String packageName = ActivityThread.currentOpPackageName();
-        String packageList = SystemProperties.get("persist.camera.privapp.list");
+        String packageList = SystemProperties.get("persist.vendor.camera.privapp.list");
 
         if (packageList.length() > 0) {
             TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
