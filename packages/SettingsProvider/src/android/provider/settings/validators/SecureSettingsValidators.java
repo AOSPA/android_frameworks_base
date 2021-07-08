@@ -555,5 +555,8 @@ public class SecureSettingsValidators {
         VALIDATORS.put(Secure.DOZE_PICK_UP_GESTURE_AMBIENT, BOOLEAN_VALIDATOR);
         VALIDATORS.put(Secure.DOZE_ON_CHARGE, BOOLEAN_VALIDATOR);
         VALIDATORS.put(Secure.NAVIGATION_BAR_HINT, BOOLEAN_VALIDATOR);
+        VALIDATORS.put(Secure.DISPLAY_COLOR_BALANCE_RED, new InclusiveIntegerRangeValidator(0, 255));
+        VALIDATORS.put(Secure.DISPLAY_COLOR_BALANCE_GREEN, new InclusiveIntegerRangeValidator(0, 255));
+        VALIDATORS.put(Secure.DISPLAY_COLOR_BALANCE_BLUE, new InclusiveIntegerRangeValidator(0, 255));
     }
 }
