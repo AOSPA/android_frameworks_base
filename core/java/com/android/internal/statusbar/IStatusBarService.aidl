@@ -264,4 +264,9 @@ interface IStatusBarService
 
     /** Terminates the started motion cues session */
     void endMotionCuesSession();
+
+    /**
+     * Toggles flashlight of the device
+     */
+    void toggleCameraFlash();
 }
