@@ -63,6 +63,7 @@ import com.android.systemui.statusbar.CommandQueue;
 import com.android.systemui.statusbar.notification.headsup.HeadsUpManager;
 import com.android.systemui.statusbar.notification.stack.NotificationStackScrollLayoutController;
 import com.android.systemui.statusbar.policy.DeviceProvisionedController;
+import com.android.systemui.statusbar.policy.FlashlightController;
 import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.statusbar.policy.RemoteInputQuickSettingsDisabler;
 import com.android.systemui.wallet.controller.QuickAccessWalletController;
@@ -112,6 +113,7 @@ public class CentralSurfacesCommandQueueCallbacksTest extends SysuiTestCase {
     @Mock private KeyguardInteractor mKeyguardInteractor;
     @Mock private QSPanelController mQSPanelController;
     @Mock private QuickAccessWalletController mQuickAccessWalletController;
+    @Mock private FlashlightController mFlashlightController;
 
     CentralSurfacesCommandQueueCallbacks mSbcqCallbacks;
 
@@ -151,7 +153,8 @@ public class CentralSurfacesCommandQueueCallbacksTest extends SysuiTestCase {
                 mActivityStarter,
                 mKeyguardInteractor,
                 mEmergencyGestureIntentFactory,
-                mQuickAccessWalletController);
+                mQuickAccessWalletController,
+                mFlashlightController);
 
         when(mUserTracker.getUserHandle()).thenReturn(
                 UserHandle.of(ActivityManager.getCurrentUser()));
