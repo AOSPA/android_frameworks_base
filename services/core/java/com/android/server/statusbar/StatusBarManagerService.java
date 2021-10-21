@@ -1181,6 +1181,17 @@ public class StatusBarManagerService extends IStatusBarService.Stub implements D
         return mTracingEnabled;
     }
 
+    @Override
+    public void toggleCameraFlash() {
+        if (mBar != null) {
+            try {
+                mBar.toggleCameraFlash();
+            } catch (RemoteException ex) {
+                Slog.e(TAG, "Unable to toggle camera flash:", ex);
+            }
+        }
+    }
+
     // TODO(b/117478341): make it aware of multi-display if needed.
     @Override
     public void disable(int what, IBinder token, String pkg) {
