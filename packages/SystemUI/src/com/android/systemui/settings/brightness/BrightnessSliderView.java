@@ -25,6 +25,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
 import androidx.annotation.Keep;
@@ -40,7 +41,7 @@ import java.util.Collections;
  * {@code FrameLayout} used to show and manipulate a {@link ToggleSeekBar}.
  *
  */
-public class BrightnessSliderView extends FrameLayout {
+public class BrightnessSliderView extends LinearLayout {
 
     @NonNull
     private ToggleSeekBar mSlider;
