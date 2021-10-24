@@ -23,6 +23,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
@@ -68,6 +69,7 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
     private boolean mTracking;
     private final FalsingManager mFalsingManager;
     private final UiEventLogger mUiEventLogger;
+    private ImageView mIconView;
 
     private final HapticSliderPlugin mBrightnessSliderHapticPlugin;
     private final ActivityStarter mActivityStarter;
@@ -93,12 +95,14 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
 
     protected BrightnessSliderController(
             BrightnessSliderView brightnessSliderView,
+            ImageView icon,
             FalsingManager falsingManager,
             UiEventLogger uiEventLogger,
             HapticSliderPlugin brightnessSliderHapticPlugin,
             ActivityStarter activityStarter,
             BrightnessWarningToast brightnessWarningToast) {
         super(brightnessSliderView);
+        mIconView = icon;
         mFalsingManager = falsingManager;
         mUiEventLogger = uiEventLogger;
         mBrightnessSliderHapticPlugin = brightnessSliderHapticPlugin;
@@ -113,6 +117,9 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
         return mView;
     }
 
+    public ImageView getIconView() {
+        return mIconView;
+    }
 
     @Override
     protected void onViewAttached() {
@@ -358,7 +365,8 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
                     mSystemClock,
                     new HapticSlider.SeekBar(root.requireViewById(R.id.slider)));
             HapticSliderViewBinder.bind(viewRoot, plugin);
-            return new BrightnessSliderController(root, mFalsingManager, mUiEventLogger, plugin,
+            ImageView icon = (ImageView) root.findViewById(R.id.brightness_icon);
+            return new BrightnessSliderController(root, icon, mFalsingManager, mUiEventLogger, plugin,
                     mActivityStarter, mBrightnessWarningToast);
         }
 
