@@ -379,6 +379,9 @@ public class PhoneStatusBarPolicy
 
 
         mCommandQueue.addCallback(this);
+
+        // Get initial user setup state
+        onUserSetupChanged();
     }
 
     private String getManagedProfileAccessibilityString() {
