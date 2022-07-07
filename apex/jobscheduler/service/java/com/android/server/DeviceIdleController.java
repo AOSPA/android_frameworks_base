@@ -2389,14 +2389,14 @@ public class DeviceIdleController extends SystemService
         }
 
         /**
-         * Returns the array of app ids whitelisted by user. Take care not to
+         * Returns the array of whitelisted app ids. Take care not to
          * modify this, as it is a reference to the original copy. But the reference
          * can change when the list changes, so it needs to be re-acquired when
          * {@link PowerManager#ACTION_POWER_SAVE_WHITELIST_CHANGED} is sent.
          */
         @Override
-        public int[] getPowerSaveWhitelistUserAppIds() {
-            return DeviceIdleController.this.getPowerSaveWhitelistUserAppIds();
+        public int[] getPowerSaveWhitelistAppIds() {
+            return DeviceIdleController.this.getAppIdWhitelistInternal();
         }
 
         @Override

@@ -97,7 +97,7 @@ public final class DeviceIdleJobsController extends StateController {
                 case PowerManager.ACTION_POWER_SAVE_WHITELIST_CHANGED:
                     synchronized (mLock) {
                         mDeviceIdleWhitelistAppIds =
-                                mLocalDeviceIdleController.getPowerSaveWhitelistUserAppIds();
+                                mLocalDeviceIdleController.getPowerSaveWhitelistAppIds();
                         if (DEBUG) {
                             Slog.d(TAG, "Got whitelist "
                                     + Arrays.toString(mDeviceIdleWhitelistAppIds));
@@ -143,7 +143,7 @@ public final class DeviceIdleJobsController extends StateController {
         mPowerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
         mLocalDeviceIdleController =
                 LocalServices.getService(DeviceIdleInternal.class);
-        mDeviceIdleWhitelistAppIds = mLocalDeviceIdleController.getPowerSaveWhitelistUserAppIds();
+        mDeviceIdleWhitelistAppIds = mLocalDeviceIdleController.getPowerSaveWhitelistAppIds();
         mPowerSaveTempWhitelistAppIds =
                 mLocalDeviceIdleController.getPowerSaveTempWhitelistAppIds();
         mDeviceIdleUpdateFunctor = new DeviceIdleUpdateFunctor();
@@ -204,7 +204,7 @@ public final class DeviceIdleJobsController extends StateController {
     }
 
     /**
-     * Checks if the given job's scheduling app id exists in the device idle user whitelist.
+     * Checks if the given job's scheduling app id exists in the device idle whitelist.
      */
     boolean isWhitelistedLocked(JobStatus job) {
         return Arrays.binarySearch(mDeviceIdleWhitelistAppIds,
