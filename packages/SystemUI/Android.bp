@@ -514,6 +514,8 @@ android_library {
         "LowLightDreamLib",
         "TraceurCommon",
         "//frameworks/libs/systemui:motion_tool_lib",
+        "motion_tool_lib",
+        "bcsmartspace-google",
         "notification_flags_lib",
         "PlatformComposeCore",
         "PlatformComposeSceneTransitionLayout",
