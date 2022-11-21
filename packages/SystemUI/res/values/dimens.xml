@@ -161,8 +161,8 @@
     <dimen name="status_bar_battery_icon_height">13.0sp</dimen>
 
     <!-- Width of the battery icon in the status bar. The battery drawable assumes a 12x20 canvas,
-    so the width of the icon should be 13.0sp * (12.0 / 20.0) -->
-    <dimen name="status_bar_battery_icon_width">7.8sp</dimen>
+    so the width of the icon should be 13.0sp * (12.0 / 20.0) + start/end margins -->
+    <dimen name="status_bar_battery_icon_width">13.8sp</dimen>
 
     <!-- Original canvas is 24x14. These dimens reflect that ratio, with 12sp height instead  -->
     <dimen name="status_bar_battery_unified_icon_width">20.6sp</dimen>
@@ -930,7 +930,7 @@
     <dimen name="qs_emergency_calls_only_text_size">12sp</dimen>
 
     <!-- Padding before battery level text in status bar, QS, and Keyguard -->
-    <dimen name="battery_level_padding_start">4dp</dimen>
+    <dimen name="battery_level_padding_start">2dp</dimen>
 
     <dimen name="notification_section_header_height">48dp</dimen>
 
@@ -1003,6 +1003,8 @@
     <!-- How much two taps can be apart to still be recognized as a double tap on the lockscreen -->
     <dimen name="double_tap_slop">32dp</dimen>
 
+    <dimen name="battery_margin_start">4dp</dimen>
+    <dimen name="battery_margin_end">2dp</dimen>
     <dimen name="battery_margin_bottom">0dp</dimen>
 
     <!-- Padding between the mobile signal indicator and the start icon when the roaming icon
@@ -1012,7 +1014,7 @@
     <!-- Starting margin before the signal cluster -->
 
     <!-- Padding between signal cluster and battery icon -->
-    <dimen name="signal_cluster_battery_padding">6dp</dimen>
+    <dimen name="signal_cluster_battery_padding">2dp</dimen>
 
     <!-- end padding for battery icon in status bar -->
     <dimen name="status_bar_battery_end_padding">0dp</dimen>

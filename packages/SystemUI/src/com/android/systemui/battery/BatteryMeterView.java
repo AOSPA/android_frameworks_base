@@ -15,6 +15,7 @@
  */
 package com.android.systemui.battery;
 
+import static android.provider.Settings.System.SHOW_BATTERY_ICON;
 import static android.provider.Settings.System.SHOW_BATTERY_PERCENT;
 
 import static com.android.settingslib.flags.Flags.newStatusBarIcons;
@@ -41,6 +42,7 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -49,6 +51,7 @@ import androidx.annotation.StyleRes;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.app.animation.Interpolators;
+import com.android.settingslib.Utils;
 import com.android.systemui.DualToneHandler;
 import com.android.systemui.battery.unified.BatteryColors;
 import com.android.systemui.battery.unified.BatteryDrawableState;
@@ -88,6 +91,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
     private boolean mPowerSaveEnabled;
     private boolean mIsBatteryDefender;
     private boolean mIsIncompatibleCharging;
+    private boolean mIsStatusBar;
     // Error state where we know nothing about the current battery state
     private boolean mBatteryStateUnknown;
     // Lazily-loaded since this is expected to be a rare-if-ever state
@@ -145,11 +149,14 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
             final MarginLayoutParams mlp = new MarginLayoutParams(
                     getResources().getDimensionPixelSize(R.dimen.status_bar_battery_icon_width),
                     getResources().getDimensionPixelSize(R.dimen.status_bar_battery_icon_height));
-            mlp.setMargins(0, 0, 0,
+            mlp.setMargins(getResources().getDimensionPixelSize(R.dimen.battery_margin_start),
+                    0 /*top*/,
+                    getResources().getDimensionPixelSize(R.dimen.battery_margin_end),
                     getResources().getDimensionPixelOffset(R.dimen.battery_margin_bottom));
             addView(mBatteryIconView, mlp);
         }
 
+        updateShowIcon();
         updateShowPercent();
         mDualToneHandler = new DualToneHandler(context);
         // Init to not dark at all.
@@ -206,6 +213,11 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
         mShowPercentMode = mode;
         updateShowPercent();
         updatePercentText();
+    }
+
+    public void setIsStatusBar(boolean isStatusBar) {
+        mIsStatusBar = isStatusBar;
+        updateShowIcon();
     }
 
     @Override
@@ -323,6 +335,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
                             getBatteryAttribution(isCharging())
                     )
             );
+            updatePercentText();
         }
     }
 
@@ -384,10 +397,9 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
         }
         float fontHeight = mBatteryPercentView.getPaint().getFontMetricsInt(null);
         mBatteryPercentView.setLineHeight(TypedValue.COMPLEX_UNIT_PX, fontHeight);
-        if (mTextColor != 0) mBatteryPercentView.setTextColor(mTextColor);
-        addView(mBatteryPercentView, new LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                (int) Math.ceil(fontHeight)));
+        LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, (int) Math.ceil(fontHeight));
+        lp.gravity = Gravity.CENTER_VERTICAL;
+        addView(mBatteryPercentView, lp);
     }
 
     /**
@@ -484,6 +496,10 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
         if (mBatteryPercentView != null) {
             mEstimateText = null;
             String percentText = NumberFormat.getPercentInstance().format(mLevel / 100f);
+            if (mBatteryIconView.getVisibility() == View.GONE && mPluggedIn) {
+                // Use the high voltage symbol ⚡ without the emoji
+                percentText += "\u26A1\uFE0E";
+            }
             // Setting text actually triggers a layout pass (because the text view is set to
             // wrap_content width and TextView always relayouts for this). Avoid needless
             // relayout if the text didn't actually change.
@@ -491,6 +507,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
                 mBatteryPercentView.setText(percentText);
             }
         }
+        updatePercentTextColor();
 
         updateContentDescription();
     }
@@ -517,8 +534,24 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
         } else {
             contentDescription = context.getString(R.string.accessibility_battery_level, mLevel);
         }
+        updatePercentTextColor();
 
         setContentDescription(contentDescription);
+    }
+
+    private void updatePercentTextColor() {
+        if (mBatteryPercentView == null) {
+            return;
+        }
+        if (mBatteryIconView.getVisibility() == View.GONE && mPowerSaveEnabled) {
+            // Use the error (red) color, same as battery saver icon
+            mBatteryPercentView.setTextColor(Utils.getColorError(getContext()));
+        } else if (mTextColor != 0) {
+            mBatteryPercentView.setTextColor(mTextColor);
+        } else {
+            mBatteryPercentView.setTextColor(Utils.getColorAttr(
+                    getContext(), android.R.attr.textColorPrimary));
+        }
     }
 
     void updateShowPercent() {
@@ -582,6 +615,13 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
                 mBatteryPercentView = null;
             }
         }
+    }
+
+    void updateShowIcon() {
+        mBatteryIconView.setVisibility(!mIsStatusBar || Settings.System.getIntForUser(
+                getContext().getContentResolver(), SHOW_BATTERY_ICON, 1,
+                UserHandle.USER_CURRENT) == 1 ? View.VISIBLE : View.GONE);
+        updatePercentText();
     }
 
     private Drawable getUnknownStateDrawable() {
@@ -739,9 +779,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
     public void updateColors(int foregroundColor, int backgroundColor, int singleToneColor) {
         mDrawable.setColors(foregroundColor, backgroundColor, singleToneColor);
         mTextColor = singleToneColor;
-        if (mBatteryPercentView != null) {
-            mBatteryPercentView.setTextColor(singleToneColor);
-        }
+        updatePercentTextColor();
 
         if (mUnknownStateDrawable != null) {
             mUnknownStateDrawable.setTint(singleToneColor);

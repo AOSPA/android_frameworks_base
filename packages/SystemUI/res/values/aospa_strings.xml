@@ -16,6 +16,14 @@
     <string name="status_bar_vowifi">Wi-Fi calling (VoWiFi)</string>
     <string name="status_bar_wifi_standard">Wi-Fi standard number</string>
 
+    <!-- SysUI Tuner: Options for how battery is displayed [CHAR LIMIT=NONE] -->
+    <string-array name="battery_options_custom">
+        <item>Only show percentage (without icon)</item>
+        <item>Always show percentage (with icon)</item>
+        <item>Show percentage when charging (default)</item>
+        <item>Don\'t show this icon</item>
+    </string-array>
+
     <!-- Label for UI element which allows deleting the screenshot [CHAR LIMIT=30] -->
     <string name="screenshot_delete_label">Delete</string>
     <!-- Content description indicating that tapping the element will allow deleting the screenshot [CHAR LIMIT=NONE] -->

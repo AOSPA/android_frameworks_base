@@ -267,6 +267,7 @@ public class KeyguardStatusBarView extends RelativeLayout {
         }
 
         if (mBatteryView != null) {
+            mBatteryView.setIsStatusBar(true);
             mBatteryView.setForceShowPercent(mBatteryCharging && mShowPercentAvailable);
         }
     }

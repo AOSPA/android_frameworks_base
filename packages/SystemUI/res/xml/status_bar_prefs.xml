@@ -126,10 +126,12 @@
 
     <!-- other weird signal stuff -->
 
-    <com.android.systemui.tuner.StatusBarSwitch
+    <com.android.systemui.tuner.BatteryPreference
         android:key="battery"
         android:title="@string/battery"
-        android:icon="@*android:drawable/ic_battery" />
+        android:icon="@*android:drawable/ic_battery"
+        android:summary="%s"
+        android:entries="@array/battery_options_custom" />
 
     <com.android.systemui.tuner.StatusBarSwitch
         android:icon="@drawable/ic_statusbar_alarm"
