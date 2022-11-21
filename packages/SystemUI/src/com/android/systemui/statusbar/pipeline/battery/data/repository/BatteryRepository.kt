@@ -77,6 +77,12 @@ interface BatteryRepository {
     val isShowBatteryPercentSettingEnabled: StateFlow<Boolean>
 
     /**
+     * [Settings.System.SHOW_BATTERY_ICON]. A user setting to indicate whether we should show the
+     * battery icon in the status bar
+     */
+    val isShowBatteryIconSettingEnabled: StateFlow<Boolean>
+
+    /**
      * If available, this flow yields a string that describes the approximate time remaining for the
      * current battery charge and usage information. While subscribed, the estimate is updated every
      * 2 minutes.
@@ -261,6 +267,19 @@ constructor(
             .stateIn(scope, SharingStarted.Lazily, default)
     }
 
+    override val isShowBatteryIconSettingEnabled = run {
+        settingsRepository
+            .boolSetting(name = Settings.System.SHOW_BATTERY_ICON, defaultValue = true)
+            .flowOn(bgDispatcher)
+            .distinctUntilChanged()
+            .logDiffsForTable(
+                tableLogBuffer = tableLog,
+                columnName = COL_SHOW_ICON_SETTING,
+                initialValue = true,
+            )
+            .stateIn(scope, SharingStarted.Lazily, true)
+    }
+
     /** Get and re-fetch the estimate every 2 minutes while active */
     private val estimate: Flow<String?> = flow {
         while (true) {
@@ -297,6 +316,7 @@ constructor(
         private const val COL_LEVEL = "level"
         private const val COL_UNKNOWN = "unknown"
         private const val COL_SHOW_PERCENT_SETTING = "showPercentSetting"
+        private const val COL_SHOW_ICON_SETTING = "showIconSetting"
         private const val COL_TIME_REMAINING_EST = "timeRemainingEstimate"
     }
 }

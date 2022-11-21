@@ -74,6 +74,9 @@ class BatteryInteractor @Inject constructor(repo: BatteryRepository) {
     /** @see [BatteryRepository.isShowBatteryPercentSettingEnabled] */
     val isBatteryPercentSettingEnabled = repo.isShowBatteryPercentSettingEnabled
 
+    /** @see [BatteryRepository.isShowBatteryIconSettingEnabled] */
+    val isBatteryIconSettingEnabled = repo.isShowBatteryIconSettingEnabled
+
     /**
      * The battery attribution (@see [BatteryAttributionModel]) describes the attribution that best
      * represents the current battery charging state. If charging, the attribution is

@@ -57,6 +57,8 @@ sealed class BatteryViewModel(
 
     val isCharging: Boolean by interactor.isCharging.hydratedStateOf(initialValue = false)
 
+    val showIcon: Boolean by interactor.isBatteryIconSettingEnabled.hydratedStateOf(initialValue = true)
+
     /** A [List<BatteryGlyph>] representation of the current [level] */
     private val levelGlyphs: Flow<List<BatteryGlyph>> =
         interactor.level.map { it?.glyphRepresentation() ?: emptyList() }

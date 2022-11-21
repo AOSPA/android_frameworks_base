@@ -19,6 +19,7 @@ package com.android.systemui.statusbar.pipeline.battery.ui.composable
 import android.graphics.Rect
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -46,11 +47,13 @@ import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onLayoutRectChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastFirstOrNull
+import com.android.settingslib.Utils
 import com.android.systemui.common.ui.compose.load
 import com.android.systemui.compose.modifiers.sysuiResTag
 import com.android.systemui.statusbar.phone.domain.interactor.IsAreaDark
@@ -59,6 +62,7 @@ import com.android.systemui.statusbar.pipeline.battery.shared.ui.BatteryFrame
 import com.android.systemui.statusbar.pipeline.battery.shared.ui.BatteryGlyph
 import com.android.systemui.statusbar.pipeline.battery.shared.ui.PathSpec
 import com.android.systemui.statusbar.pipeline.battery.ui.viewmodel.BatteryViewModel
+import java.text.NumberFormat
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -175,6 +179,37 @@ fun UnifiedBattery(
         } else {
             viewModel.colorProfile.light
         }
+    }
+
+    if (!viewModel.showIcon) {
+        val level = viewModel.level
+        if (level != null) {
+            var percentText = NumberFormat.getPercentInstance().format(level / 100f)
+            if (viewModel.isCharging) {
+                percentText += "\u26A1\uFE0E"
+            }
+            val textColor =
+                if (isDarkProvider().isDarkTheme(bounds)) {
+                    Color.White
+                } else {
+                    Color.Black
+                }
+            Text(
+                text = percentText,
+                color = textColor,
+                style = BatteryViewModel.getStatusBarBatteryTextStyle(LocalContext.current),
+                maxLines = 1,
+                modifier =
+                    Modifier.sysuiResTag(BatteryViewModel.TEST_TAG).onLayoutRectChanged {
+                        relativeLayoutBounds ->
+                        bounds =
+                            with(relativeLayoutBounds.boundsInScreen) {
+                                Rect(left, top, right, bottom)
+                            }
+                    },
+            )
+        }
+        return
     }
 
     BatteryLayout(

@@ -15,6 +15,7 @@
  */
 package com.android.systemui.battery;
 
+import static android.provider.Settings.System.SHOW_BATTERY_ICON;
 import static android.provider.Settings.System.SHOW_BATTERY_PERCENT;
 
 import android.content.ContentResolver;
@@ -161,6 +162,13 @@ public class BatteryMeterViewController extends ViewController<BatteryMeterView>
     }
 
     @Override
+    protected void onInit() {
+        super.onInit();
+        mView.setIsStatusBar(mLocation == StatusBarLocation.HOME
+                || mLocation == StatusBarLocation.KEYGUARD);
+    }
+
+    @Override
     protected void onViewAttached() {
         mConfigurationController.addCallback(mConfigurationListener);
         subscribeForTunerUpdates();
@@ -216,6 +224,11 @@ public class BatteryMeterViewController extends ViewController<BatteryMeterView>
                 false,
                 mSettingObserver,
                 user);
+        mContentResolver.registerContentObserver(
+                Settings.System.getUriFor(SHOW_BATTERY_ICON),
+                false,
+                mSettingObserver,
+                user);
     }
 
     private void registerGlobalBatteryUpdateObserver() {
@@ -233,6 +246,7 @@ public class BatteryMeterViewController extends ViewController<BatteryMeterView>
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);
+            mView.updateShowIcon();
             mView.updateShowPercent();
             if (TextUtils.equals(uri.getLastPathSegment(),
                     Settings.Global.BATTERY_ESTIMATES_LAST_UPDATE_TIME)) {

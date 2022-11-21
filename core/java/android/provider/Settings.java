@@ -6817,6 +6817,16 @@ public final class Settings {
         public static final String SHOW_BATTERY_PERCENT = "status_bar_show_battery_percent";
 
         /**
+         * Setting to determine whether or not to show the battery icon drawable in the status bar
+         * (separate from percentage).
+         *    0 - Don't show icon
+         *    1 - Show icon
+         * @hide
+         */
+        @Readable
+        public static final String SHOW_BATTERY_ICON = "status_bar_show_battery_icon";
+
+        /**
          * Whether or not to enable multiple audio focus.
          * When enabled, requires more management by user over application playback activity,
          * for instance pausing media apps when another starts.
@@ -7277,6 +7287,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(VOLBTN_MUSIC_CONTROLS);
             PRIVATE_SETTINGS.add(RINGTONE_VIBRATION_PATTERN);
             PRIVATE_SETTINGS.add(NOTIFICATION_VIBRATION_PATTERN);
+            PRIVATE_SETTINGS.add(SHOW_BATTERY_ICON);
         }
 
         /**
