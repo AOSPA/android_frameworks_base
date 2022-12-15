@@ -148,7 +148,7 @@ public class BrightnessDialog extends Activity {
         controller.init();
         frame.addView(controller.getRootView(), MATCH_PARENT, WRAP_CONTENT);
 
-        mBrightnessController = mBrightnessControllerFactory.create(controller.getIconView(), controller);
+        mBrightnessController = mBrightnessControllerFactory.create(controller);
 
         Configuration configuration = getResources().getConfiguration();
         int orientation = configuration.orientation;
@@ -163,7 +163,6 @@ public class BrightnessDialog extends Activity {
         }
 
         frame.setLayoutParams(lp);
-
     }
 
     @Override
