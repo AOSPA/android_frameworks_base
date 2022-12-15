@@ -237,5 +237,7 @@
         <attr name="tickMark" format="reference" />
         <attr name="seekBarChangeMagnitude" format="integer" />
     </declare-styleable>
+
+    <attr name="offStateColor" format="color" />
 </resources>
 
