@@ -278,6 +278,7 @@ java_library_static {
         "android.content.flags-aconfig-java",
         "trust_token",
         "ambientcontext_flags_lib",
+        "vendor.aac.hardware.richtap.vibrator-V1-java",
     ],
     javac_shard_size: 50,
     javacflags: [

@@ -36,6 +36,7 @@ import android.os.IBinder;
 import android.os.IVibratorStateListener;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.os.RichTapVibrationEffect;
 import android.os.ServiceManager;
 import android.os.Trace;
 import android.os.VibrationEffect;
@@ -133,6 +134,9 @@ class VintfHalVibrator {
         private volatile State mCurrentState;
         private volatile float mCurrentAmplitude;
 
+        @Nullable
+        private RichTapVibratorService mRichTapService;
+
         DefaultHalVibrator(int vibratorId, VintfSupplier<IVibrator> supplier, Handler handler,
                 HalNativeHandler nativeHandler) {
             mVibratorId = vibratorId;
@@ -142,6 +146,10 @@ class VintfHalVibrator {
             mVibratorInfo = new VibratorInfo.Builder(vibratorId).build();
             mCurrentState = State.IDLE;
             mCurrentAmplitude = 0;
+
+            if (RichTapVibrationEffect.isSupported()) {
+                mRichTapService = new RichTapVibratorService();
+            }
         }
 
         @Override
@@ -286,6 +294,10 @@ class VintfHalVibrator {
             Trace.traceBegin(TRACE_TAG_VIBRATOR, "HalVibrator.setAmplitude");
             try {
                 synchronized (mLock) {
+                    if (mRichTapService != null) {
+                        int strength = (int) (255.0f * amplitude);
+                        mRichTapService.richTapVibratorSetAmplitude(strength);
+                    }
                     if (!mVibratorInfo.hasCapability(IVibrator.CAP_AMPLITUDE_CONTROL)) {
                         return false;
                     }
@@ -308,7 +320,10 @@ class VintfHalVibrator {
             try {
                 synchronized (mLock) {
                     int result;
-                    if (mVibratorInfo.hasCapability(IVibrator.CAP_ON_CALLBACK)) {
+                    if (mRichTapService != null) {
+                        mRichTapService.richTapVibratorOn(milliseconds);
+                        result = (int) milliseconds;
+                    } else if (mVibratorInfo.hasCapability(IVibrator.CAP_ON_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
                         // callback instance for each call, overloading the GC.
                         result = mNativeHandler.vibrateWithCallback(mVibratorId, vibrationId,
@@ -368,13 +383,23 @@ class VintfHalVibrator {
             Trace.traceBegin(TRACE_TAG_VIBRATOR, "HalVibrator.onPrebaked");
             try {
                 synchronized (mLock) {
-                    int result;
-                    if (mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
+                    int result = 0;
+                    if (mRichTapService != null) {
+                        int[] pattern = RichTapVibrationEffect.getInnerEffect(
+                                prebaked.getEffectId());
+                        int strength = RichTapVibrationEffect.getInnerEffectStrength(
+                                prebaked.getEffectStrength());
+                        if (pattern != null) {
+                            result = 30;
+                            mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
+                        }
+                    }
+                    if (result <= 0 && mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
                         // callback instance for each call, overloading the GC.
                         result = mNativeHandler.vibrateWithCallback(mVibratorId, vibrationId,
                                 stepId, prebaked.getEffectId(), prebaked.getEffectStrength());
-                    } else {
+                    } else if (result <= 0) {
                         // Vibrate callback not supported, avoid unnecessary JNI round trip and
                         // simulate HAL callback here using a Handler.
                         int effectId = prebaked.getEffectId();
