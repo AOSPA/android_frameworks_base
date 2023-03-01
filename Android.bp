@@ -264,6 +264,7 @@ java_library {
         "com.android.sysprop.init",
         "com.android.sysprop.localization",
         "PlatformProperties",
+        "vendor.lineage.health-V1-java",
     ],
     sdk_version: "core_platform",
     installable: false,
