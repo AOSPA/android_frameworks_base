@@ -8447,6 +8447,8 @@
     <!-- Attribution for Gnss Time Update service. -->
     <attribution android:tag="GnssTimeUpdateService"
                  android:label="@string/gnss_time_update_service"/>
+    <!-- LineageHealth -->
+    <protected-broadcast android:name="lineageos.platform.intent.action.CHARGING_CONTROL_CANCEL_ONCE" />
     <!-- Attribution for MusicRecognitionManagerService.
          <p>Not for use by third-party applications.</p> -->
     <attribution android:tag="MusicRecognitionManagerService"
