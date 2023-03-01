@@ -36,4 +36,21 @@
     <!-- Cycle through ringer modes -->
     <java-symbol type="string" name="volume_dialog_ringer_guidance_normal" />
 
+    <!-- Health interface -->
+    <java-symbol type="bool" name="config_chargingControlEnabled" />
+    <java-symbol type="integer" name="config_defaultChargingControlMode" />
+    <java-symbol type="integer" name="config_defaultChargingControlStartTime" />
+    <java-symbol type="integer" name="config_defaultChargingControlTargetTime" />
+    <java-symbol type="integer" name="config_defaultChargingControlLimit" />
+    <java-symbol type="drawable" name="ic_charging_control" />
+    <java-symbol type="integer" name="config_chargingControlTimeMargin" />
+    <java-symbol type="integer" name="config_chargingControlBatteryRechargeMargin" />
+    <java-symbol type="string" name="charging_control_notification_channel" />
+    <java-symbol type="string" name="charging_control_notification_title" />
+    <java-symbol type="string" name="charging_control_notification_cancel_once" />
+    <java-symbol type="string" name="charging_control_notification_content_limit" />
+    <java-symbol type="string" name="charging_control_notification_content_limit_reached" />
+    <java-symbol type="string" name="charging_control_notification_content_target" />
+    <java-symbol type="string" name="charging_control_notification_content_target_reached" />
+
 </resources>

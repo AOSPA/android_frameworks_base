@@ -42,4 +42,32 @@
          to disable DC dimming -->
     <string name="config_deviceDcDimmingDisableValue">0</string>
 
+    <!-- Whether charging control should be enabled by default -->
+    <bool name="config_chargingControlEnabled">false</bool>
+    <!-- Default charging control mode.
+         This integer should be set to:
+         1 - auto - Use the alarm to calculate the time range when to activate charging control
+         2 - custom - Use time range when the device is usually charging for hours
+         3 - limit - Just limit charging -->
+    <integer name="config_defaultChargingControlMode">1</integer>
+    <!-- Default time when charging control is activated.
+         Represented as seconds from midnight (e.g. 79200 == 10pm). -->
+    <integer name="config_defaultChargingControlStartTime">79200</integer>
+    <!-- Default time when battery will be fully charged.
+         Represented as seconds from midnight (e.g. 21600 == 6am). -->
+    <integer name="config_defaultChargingControlTargetTime">21600</integer>
+    <!-- Default charging limit. -->
+    <integer name="config_defaultChargingControlLimit">80</integer>
+    <!-- Considering the fact that the system might have an incorrect estimation of the time to
+         full. Set a time margin to make the device fully charged before the target time arrives.
+         The unit is minutes and the default value is 30 minutes. If you find that it is not enough
+         to make the device to be fully charged at the target time, increase the value
+    -->
+    <integer name="config_chargingControlTimeMargin">30</integer>
+    <!-- For a device that cannot bypass battery when charging stops (that is, the battery current
+         is 0mA when charging stops), the battery will gradually discharge. So we need to make it
+         recharge when the battery level is lower than a threshold. Set this so that the device
+         will be charged between (limit - val) and limit. -->
+    <integer name="config_chargingControlBatteryRechargeMargin">10</integer>
+
 </resources>
