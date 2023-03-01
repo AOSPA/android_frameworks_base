@@ -314,6 +314,7 @@ import com.android.server.webkit.WebViewUpdateService;
 import com.android.server.wm.ActivityTaskManagerService;
 import com.android.server.wm.WindowManagerGlobalLock;
 import com.android.server.wm.WindowManagerService;
+import com.android.server.lineage.health.HealthInterfaceService;
 
 import dalvik.system.VMRuntime;
 // QTI_BEGIN: 2018-02-17: Wigig: frameworks/base: Add WiGig support
@@ -2892,6 +2893,10 @@ public final class SystemServer implements Dumpable {
                 mSystemServiceManager.startService(PocketBridgeService.class);
                 t.traceEnd();
             }
+
+            t.traceBegin("StartHealthService");
+            mSystemServiceManager.startService(HealthInterfaceService.class);
+            t.traceEnd();
         }
 
         t.traceBegin("StartMediaProjectionManager");
