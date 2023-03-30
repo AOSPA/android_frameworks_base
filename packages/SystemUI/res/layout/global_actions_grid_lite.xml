@@ -42,6 +42,7 @@
         android:translationZ="@dimen/global_actions_translate"
         android:orientation="horizontal"
         android:background="@drawable/global_actions_lite_background"
+        android:backgroundTint="@color/global_actions_lite_background"
         android:padding="@dimen/global_actions_lite_padding"
         android:layoutDirection="ltr">
       <androidx.constraintlayout.helper.widget.Flow
