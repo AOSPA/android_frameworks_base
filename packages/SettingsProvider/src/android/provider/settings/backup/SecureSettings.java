@@ -303,5 +303,7 @@ public class SecureSettings {
         Settings.Secure.SELECTED_SPELL_CHECKER,
         // SELECTED_SPELL_CHECKER_SUBTYPE needs to be restored after SELECTED_SPELL_CHECKER
         Settings.Secure.SELECTED_SPELL_CHECKER_SUBTYPE,
+        Settings.Secure.DOZE_PICK_UP_GESTURE_AMBIENT,
+        Settings.Secure.DOZE_TAP_GESTURE_AMBIENT
     };
 }
