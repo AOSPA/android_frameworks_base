@@ -11,6 +11,9 @@
     <!-- Doze: does the double tap sensor need a proximity check? -->
     <bool name="doze_double_tap_proximity_check">false</bool>
 
+    <!-- Doze: does the pickup sensor need a proximity check? -->
+    <bool name="doze_pickup_event_proximity_check">false</bool>
+
     <!-- Doze: does the single tap sensor need a proximity check? -->
     <bool name="doze_single_tap_proximity_check">false</bool>
 
