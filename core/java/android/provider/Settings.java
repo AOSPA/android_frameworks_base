@@ -6634,6 +6634,29 @@ public final class Settings {
         public static final String POCKET_JUDGE = "pocket_judge";
 
         /**
+         * Which Vibration Pattern to use
+         * 0: dzzz-dzzz
+         * 1: dzzz-da
+         * 2: mm-mm-mm
+         * 3: da-da-dzzz
+         * 4: da-dzzz-da
+         * @hide
+         */
+        @Readable
+        public static final String RINGTONE_VIBRATION_PATTERN = "ringtone_vibration_pattern";
+
+        /**
+         * Which notification Vibration Pattern to use
+         * 0: default provided value
+         * 1: dzzz
+         * 2: da-mm
+         * 3: da-da
+         * @hide
+         */
+        @Readable
+        public static final String NOTIFICATION_VIBRATION_PATTERN = "notification_vibration_pattern";
+
+        /**
          * Controls whether gestures are enabled.
          * @hide
          */
