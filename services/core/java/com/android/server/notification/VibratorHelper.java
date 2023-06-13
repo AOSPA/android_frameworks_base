@@ -28,6 +28,7 @@ import android.os.Process;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.util.Slog;
 
 import com.android.internal.R;
@@ -44,9 +45,14 @@ public final class VibratorHelper {
     private static final long[] DEFAULT_VIBRATE_PATTERN = {0, 250, 250, 250};
     private static final int VIBRATE_PATTERN_MAXLEN = 8 * 2 + 1; // up to eight bumps
 
+    private static final long[] DZZZ_VIBRATION_PATTERN = {0, 255};
+    private static final long[] DA_MM_VIBRATION_PATTERN = {0, 70, 70, 300};
+    private static final long[] DA_DA_VIBRATION_PATTERN = {0, 70, 80, 70};
+
     private final Vibrator mVibrator;
     private final long[] mDefaultPattern;
     private final long[] mFallbackPattern;
+    @Nullable private final long[] mCustomPattern;
     private final int mDefaultVibrationAmplitude;
     private final Context mContext;
 
@@ -63,6 +69,23 @@ public final class VibratorHelper {
         mDefaultVibrationAmplitude = context.getResources().getInteger(
             com.android.internal.R.integer.config_defaultVibrationAmplitude);
         mContext = context;
+
+        final int value = Settings.System.getInt(context.getContentResolver(),
+                Settings.System.NOTIFICATION_VIBRATION_PATTERN, 0);
+        switch (value) {
+            case 1:
+                mCustomPattern = DZZZ_VIBRATION_PATTERN;
+                break;
+            case 2:
+                mCustomPattern = DA_MM_VIBRATION_PATTERN;
+                break;
+            case 3:
+                mCustomPattern = DA_DA_VIBRATION_PATTERN;
+                break;
+            default:
+                mCustomPattern = null;
+                break;
+        }
     }
 
     /**
@@ -137,7 +160,7 @@ public final class VibratorHelper {
             }
         }
 
-        return createWaveformVibration(mDefaultPattern, insistent);
+        return createWaveformVibration(mCustomPattern != null ? mCustomPattern : mDefaultPattern, insistent);
     }
 
     /**

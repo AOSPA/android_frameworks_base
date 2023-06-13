@@ -6984,6 +6984,29 @@ public final class Settings {
         public static final String SCREENSHOT_SHUTTER_SOUND = "screenshot_shutter_sound";
 
         /**
+         * Which Vibration Pattern to use
+         * 0: dzzz-dzzz
+         * 1: dzzz-da
+         * 2: mm-mm-mm
+         * 3: da-da-dzzz
+         * 4: da-dzzz-da
+         * @hide
+         */
+        @Readable
+        public static final String RINGTONE_VIBRATION_PATTERN = "ringtone_vibration_pattern";
+
+        /**
+         * Which notification Vibration Pattern to use
+         * 0: default provided value
+         * 1: dzzz
+         * 2: da-mm
+         * 3: da-da
+         * @hide
+         */
+        @Readable
+        public static final String NOTIFICATION_VIBRATION_PATTERN = "notification_vibration_pattern";
+
+        /**
          * Controls whether gestures are enabled.
          * @hide
          */
@@ -7252,6 +7275,8 @@ public final class Settings {
             PRIVATE_SETTINGS.add(ADAPTIVE_PLAYBACK_TIMEOUT);
             PRIVATE_SETTINGS.add(TORCH_POWER_BUTTON_GESTURE);
             PRIVATE_SETTINGS.add(VOLBTN_MUSIC_CONTROLS);
+            PRIVATE_SETTINGS.add(RINGTONE_VIBRATION_PATTERN);
+            PRIVATE_SETTINGS.add(NOTIFICATION_VIBRATION_PATTERN);
         }
 
         /**
