@@ -276,5 +276,7 @@ public class SystemSettingsValidators {
         VALIDATORS.put(System.PREFERRED_REGION, ANY_STRING_VALIDATOR);
         VALIDATORS.put(System.CV_ENABLED,
                 new InclusiveIntegerRangeValidator(0, 1));
+        VALIDATORS.put(System.RINGTONE_VIBRATION_PATTERN, new InclusiveIntegerRangeValidator(0, 4));
+        VALIDATORS.put(System.NOTIFICATION_VIBRATION_PATTERN, new InclusiveIntegerRangeValidator(0, 4));
     }
 }
