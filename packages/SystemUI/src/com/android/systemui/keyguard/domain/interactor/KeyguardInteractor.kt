@@ -460,6 +460,8 @@ constructor(
             StatusBarManager.CAMERA_LAUNCH_SOURCE_LIFT_TRIGGER -> CameraLaunchType.LIFT_TRIGGER
             StatusBarManager.CAMERA_LAUNCH_SOURCE_QUICK_AFFORDANCE ->
                 CameraLaunchType.QUICK_AFFORDANCE
+            StatusBarManager.CAMERA_LAUNCH_SOURCE_SCREEN_GESTURE  ->
+                CameraLaunchType.SCREEN_GESTURE
             else -> throw IllegalArgumentException("Invalid CameraLaunchType value: $value")
         }
     }
