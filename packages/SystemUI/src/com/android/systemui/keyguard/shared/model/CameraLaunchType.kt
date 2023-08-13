@@ -27,4 +27,6 @@ enum class CameraLaunchType {
     LIFT_TRIGGER,
     /** Quick affordance button has been pressed */
     QUICK_AFFORDANCE,
+    /** OffScreen gesture has been triggered **/
+    SCREEN_GESTURE,
 }
