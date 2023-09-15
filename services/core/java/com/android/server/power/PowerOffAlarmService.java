@@ -89,11 +89,6 @@ public class PowerOffAlarmService extends SystemService {
         if (phase != SystemService.PHASE_BOOT_COMPLETED || !mIsAvailable)
             return;
         Slog.v(TAG, "onBootPhase PHASE_BOOT_COMPLETED");
-        final File prefsFile = new File(
-                new File(Environment.getDataSystemDeDirectory(
-                    UserHandle.USER_SYSTEM), PREF_DIR_NAME), PREF_FILE_NAME);
-        mSharedPreferences = mContext.createDeviceProtectedStorageContext()
-                .getSharedPreferences(prefsFile, Context.MODE_PRIVATE);
         updateAlarms(mAlarmManager);
     }
 
@@ -105,6 +100,17 @@ public class PowerOffAlarmService extends SystemService {
         }
     };
 
+    private synchronized SharedPreferences getSharedPreferences() {
+        if (mSharedPreferences == null) {
+            final File prefsFile = new File(
+                    new File(Environment.getDataSystemDeDirectory(
+                        UserHandle.USER_SYSTEM), PREF_DIR_NAME), PREF_FILE_NAME);
+            mSharedPreferences = mContext.createDeviceProtectedStorageContext()
+                    .getSharedPreferences(prefsFile, Context.MODE_PRIVATE);
+        }
+        return mSharedPreferences;
+    }
+
     private synchronized void updateAlarms(AlarmManager alarmManager) {
         final AlarmManager.AlarmClockInfo alarmInfo = alarmManager.getNextAlarmClock();
         cancelPowerOffAlarm();
@@ -113,17 +119,27 @@ public class PowerOffAlarmService extends SystemService {
     }
 
     private synchronized void cancelPowerOffAlarm() {
-        final long time = mSharedPreferences.getLong(PREF_NEXT_ALARM, 0);
+        final SharedPreferences sharedPrefs = getSharedPreferences();
+        if (sharedPrefs == null) {
+            Slog.e(TAG, "cancelPowerOffAlarm: SharedPreferences is null!");
+            return;
+        }
+        final long time = sharedPrefs.getLong(PREF_NEXT_ALARM, 0);
         Slog.i(TAG, "Cancel power off alarm, Time: " + time);
         mContext.sendBroadcastAsUser(getIntent(ACTION_CANCEL, time), UserHandle.SYSTEM);
-        mSharedPreferences.edit().remove(PREF_NEXT_ALARM).commit();
+        sharedPrefs.edit().remove(PREF_NEXT_ALARM).commit();
     }
 
     private synchronized void setPowerOffAlarm(AlarmManager.AlarmClockInfo info) {
+        final SharedPreferences sharedPrefs = getSharedPreferences();
+        if (sharedPrefs == null) {
+            Slog.e(TAG, "setPowerOffAlarm: SharedPreferences is null!");
+            return;
+        }
         final long time = info.getTriggerTime();
         Slog.i(TAG, "Set next power off alarm. Time: " + time);
         mContext.sendBroadcastAsUser(getIntent(ACTION_SET, time), UserHandle.SYSTEM);
-        mSharedPreferences.edit().putLong(PREF_NEXT_ALARM, time).commit();
+        sharedPrefs.edit().putLong(PREF_NEXT_ALARM, time).commit();
     }
 
     private static Intent getIntent(String action, long time) {
