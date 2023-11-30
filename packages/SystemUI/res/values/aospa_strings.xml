@@ -5,6 +5,9 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
+    <!-- Face unlock -->
+    <string name="face_unlock_recognizing">Recognizing face...</string>
+
     <!-- Status bar -->
     <string name="status_bar_icons_title">Status bar icons</string>
     <string name="status_bar_hd_calling">HD calling (VoLTE/VoNR)</string>
