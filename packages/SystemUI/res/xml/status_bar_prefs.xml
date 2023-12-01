@@ -86,6 +86,12 @@
         android:key="wifi"
         android:title="@string/quick_settings_wifi_label" />
 
+    <com.android.systemui.tuner.TunerSwitch
+        android:key="wifi_standard"
+        android:title="@string/status_bar_wifi_standard"
+        sysui:defValue="@bool/config_show_wifi_standard"
+        android:icon="@drawable/ic_statusbar_wifi_standard" />
+
     <com.android.systemui.tuner.StatusBarSwitch
         android:icon="@drawable/ic_statusbar_ethernet"
         android:key="ethernet"
