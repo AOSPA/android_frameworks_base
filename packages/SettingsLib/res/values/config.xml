@@ -33,7 +33,7 @@
     <bool name="config_hspa_data_distinguishable">false</bool>
 
     <!-- Control whether to show Wifi standard in Wifi icon -->
-    <bool name="config_show_wifi_standard">true</bool>
+    <bool name="config_show_wifi_standard">false</bool>
 
     <!-- Edit User avatar explicit package name -->
     <string name="config_avatar_picker_package" translatable="false">
