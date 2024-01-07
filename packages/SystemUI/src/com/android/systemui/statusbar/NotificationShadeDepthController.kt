@@ -90,7 +90,7 @@ constructor(
     private val shadeDisplaysRepository: Lazy<ShadeDisplaysRepository>,
 ) : ShadeExpansionListener, Dumpable {
     companion object {
-        private const val WAKE_UP_ANIMATION_ENABLED = true
+        private const val WAKE_UP_ANIMATION_ENABLED = false
         private const val VELOCITY_SCALE = 100f
         private const val MAX_VELOCITY = 3000f
         private const val MIN_VELOCITY = -MAX_VELOCITY
