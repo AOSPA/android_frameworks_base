@@ -122,6 +122,7 @@ bool FileDescriptorAllowlist::IsAllowed(const std::string& path) const {
     static const char* kSystemSystemExtOverlayDir = "/system/system_ext/overlay/";
     static const char* kSystemExtOverlayDir = "/system_ext/overlay";
     static const char* kSystemOdmOverlayDir = "/system/odm/overlay";
+    static const char* kVendorOdmOverlayDir = "/vendor/odm/overlay";
     static const char* kOdmOverlayDir = "/odm/overlay";
     static const char* kSystemOemOverlayDir = "/system/oem/overlay";
     static const char* kOemOverlayDir = "/oem/overlay";
@@ -135,6 +136,7 @@ bool FileDescriptorAllowlist::IsAllowed(const std::string& path) const {
          android::base::StartsWith(path, kSystemSystemExtOverlayDir) ||
          android::base::StartsWith(path, kSystemExtOverlayDir) ||
          android::base::StartsWith(path, kSystemOdmOverlayDir) ||
+         android::base::StartsWith(path, kVendorOdmOverlayDir) ||
          android::base::StartsWith(path, kOdmOverlayDir) ||
          android::base::StartsWith(path, kSystemOemOverlayDir) ||
          android::base::StartsWith(path, kOemOverlayDir)) &&
