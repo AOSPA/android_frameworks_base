@@ -91,6 +91,7 @@
 
     <!-- Health interface -->
     <java-symbol type="bool" name="config_chargingControlEnabled" />
+    <java-symbol type="bool" name="config_chargingControlToggleSetAlways" />
     <java-symbol type="integer" name="config_defaultChargingControlMode" />
     <java-symbol type="integer" name="config_defaultChargingControlStartTime" />
     <java-symbol type="integer" name="config_defaultChargingControlTargetTime" />

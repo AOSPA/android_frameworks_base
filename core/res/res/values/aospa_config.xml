@@ -140,5 +140,9 @@
          recharge when the battery level is lower than a threshold. Set this so that the device
          will be charged between (limit - val) and limit. -->
     <integer name="config_chargingControlBatteryRechargeMargin">10</integer>
+    <!-- Some devices might require always setting the toggle instead of set based on current toggle
+    value. If this is the case, set this config to true to let the toggle provider always set
+    charging enabled status regardless of the current status. -->
+    <bool name="config_chargingControlToggleSetAlways">false</bool>
 
 </resources>
