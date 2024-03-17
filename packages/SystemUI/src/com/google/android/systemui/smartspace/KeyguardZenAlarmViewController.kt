@@ -9,7 +9,7 @@ import android.os.Handler
 import android.text.format.DateFormat
 import android.view.View
 import com.android.internal.annotations.VisibleForTesting
-import com.android.systemui.R
+import com.android.systemui.res.R
 import com.android.systemui.dagger.SysUISingleton
 import com.android.systemui.plugins.BcSmartspaceDataPlugin
 import com.android.systemui.statusbar.policy.NextAlarmController
@@ -45,7 +45,7 @@ class KeyguardZenAlarmViewController @Inject constructor(
     
     fun init() {
         plugin.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View?) {
+            override fun onViewAttachedToWindow(v: View) {
                 smartspaceViews.add(v as BcSmartspaceDataPlugin.SmartspaceView)
                 if (smartspaceViews.size === 1) {
                     zenModeController.addCallback(zenModeCallback)
@@ -54,7 +54,7 @@ class KeyguardZenAlarmViewController @Inject constructor(
                 refresh()
             }
 
-            override fun onViewDetachedFromWindow(v: View?) {
+            override fun onViewDetachedFromWindow(v: View) {
                 smartspaceViews.remove(v as BcSmartspaceDataPlugin.SmartspaceView)
                 if (smartspaceViews.isEmpty()) {
                     zenModeController.removeCallback(zenModeCallback)
@@ -72,8 +72,7 @@ class KeyguardZenAlarmViewController @Inject constructor(
 
     private fun loadDndImage(): Drawable {
         val drawable: Drawable = context.getResources().getDrawable(R.drawable.stat_sys_dnd, null)
-        val drawable2: Drawable = (drawable as InsetDrawable).getDrawable()
-        return drawable2
+        return drawable
     }
 
     fun updateDnd() {
