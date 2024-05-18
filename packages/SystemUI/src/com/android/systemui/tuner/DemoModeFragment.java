@@ -22,7 +22,7 @@ import android.os.Bundle;
 
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
-import androidx.preference.SwitchPreference;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
@@ -50,8 +50,8 @@ public class DemoModeFragment extends SettingsBasePreferenceFragment
         "managed_profile",
     };
 
-    private SwitchPreference mEnabledSwitch;
-    private SwitchPreference mOnSwitch;
+    private SwitchPreferenceCompat mEnabledSwitch;
+    private SwitchPreferenceCompat mOnSwitch;
 
     private DemoModeController mDemoModeController;
     private GlobalSettings mGlobalSettings;
@@ -69,10 +69,10 @@ public class DemoModeFragment extends SettingsBasePreferenceFragment
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         Context context = getContext();
-        mEnabledSwitch = new SwitchPreference(context);
+        mEnabledSwitch = new SwitchPreferenceCompat(context);
         mEnabledSwitch.setTitle(R.string.enable_demo_mode);
         mEnabledSwitch.setOnPreferenceChangeListener(this);
-        mOnSwitch = new SwitchPreference(context);
+        mOnSwitch = new SwitchPreferenceCompat(context);
         mOnSwitch.setTitle(R.string.show_demo_mode);
         mOnSwitch.setEnabled(false);
         mOnSwitch.setOnPreferenceChangeListener(this);
