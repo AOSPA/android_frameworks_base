@@ -72,6 +72,7 @@ import static com.android.server.wm.ActivityTaskManagerDebugConfig.DEBUG_CLEANUP
 import static com.android.server.wm.ActivityTaskManagerDebugConfig.DEBUG_IDLE;
 import static com.android.server.wm.ActivityTaskManagerDebugConfig.DEBUG_RECENTS;
 import static com.android.server.wm.ActivityTaskManagerDebugConfig.DEBUG_ROOT_TASK;
+import static com.android.server.wm.ActivityTaskManagerDebugConfig.DEBUG_SERVICETRACKER;
 import static com.android.server.wm.ActivityTaskManagerDebugConfig.DEBUG_SWITCH;
 import static com.android.server.wm.ActivityTaskManagerDebugConfig.POSTFIX_IDLE;
 import static com.android.server.wm.ActivityTaskManagerDebugConfig.POSTFIX_PAUSE;
@@ -143,6 +144,7 @@ import android.os.Message;
 import android.os.PersistableBundle;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.Trace;
 import android.os.UserHandle;
@@ -260,6 +262,9 @@ public class ActivityTaskSupervisor implements RecentTasks.Callbacks {
     private static final int REPORT_PIP_MODE_CHANGED_MSG = FIRST_SUPERVISOR_TASK_MSG + 15;
     private static final int START_HOME_MSG = FIRST_SUPERVISOR_TASK_MSG + 16;
     private static final int TOP_RESUMED_STATE_LOSS_TIMEOUT_MSG = FIRST_SUPERVISOR_TASK_MSG + 17;
+
+    private static final String AIDL_SERVICE =
+            "vendor.qti.hardware.servicetrackeraidl.IServicetracker/default";
 
     // Used to indicate if an object (e.g. task) should be moved/created
     // at the top of its container (e.g. root task).
@@ -536,17 +541,18 @@ public class ActivityTaskSupervisor implements RecentTasks.Callbacks {
 
 // QTI_BEGIN: 2020-06-27: Core: Passing every activity state change to Servicetracker HAL.
     public IServicetracker getServicetrackerInstance() {
+        if (ServiceManager.isDeclared(AIDL_SERVICE)) return null;
         if (mServicetracker == null) {
             try {
                 mServicetracker = IServicetracker.getService(false);
             } catch (java.util.NoSuchElementException e) {
                 // Service doesn't exist or cannot be opened logged below
             } catch (RemoteException e) {
-                Slog.e(TAG, "Failed to get servicetracker interface", e);
+                if (DEBUG_SERVICETRACKER) Slog.e(TAG, "Failed to get servicetracker interface", e);
                 return null;
             }
             if (mServicetracker == null) {
-                Slog.w(TAG, "servicetracker HIDL not available");
+                if (DEBUG_SERVICETRACKER) Slog.w(TAG, "servicetracker HIDL not available");
                 return null;
             }
         }
