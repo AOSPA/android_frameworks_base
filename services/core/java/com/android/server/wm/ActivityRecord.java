@@ -5874,9 +5874,9 @@ public final class ActivityRecord extends WindowToken {
                 if (mServicetracker != null)
                     mServicetracker.OnActivityStateChange(aState, aDetails, aStats, early_notify);
                 else
-                    Slog.e(TAG, "Unable to get servicetracker HAL instance");
+                    if (DEBUG_SERVICETRACKER) Slog.e(TAG, "Unable to get servicetracker HAL instance");
             } catch (RemoteException e) {
-                    Slog.e(TAG, "Failed to send activity state change details to servicetracker HAL", e);
+                    if (DEBUG_SERVICETRACKER) Slog.e(TAG, "Failed to send activity state change details to servicetracker HAL", e);
                     mAtmService.mTaskSupervisor.destroyServicetrackerInstance();
             }
 // QTI_END: 2022-10-06: Core: Merge changes from topic "am-000f4089-22e1-4b8b-a1ba-7df6718ad762" into t-keystone-qcom-dev
