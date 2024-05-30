@@ -6161,9 +6161,9 @@ public final class ActivityRecord extends WindowToken implements WindowManagerSe
                 if (mServicetracker != null)
                     mServicetracker.OnActivityStateChange(aState, aDetails, aStats, early_notify);
                 else
-                    Slog.e(TAG, "Unable to get servicetracker HAL instance");
+                    if (DEBUG_SERVICETRACKER) Slog.e(TAG, "Unable to get servicetracker HAL instance");
             } catch (RemoteException e) {
-                    Slog.e(TAG, "Failed to send activity state change details to servicetracker HAL", e);
+                    if (DEBUG_SERVICETRACKER) Slog.e(TAG, "Failed to send activity state change details to servicetracker HAL", e);
                     mAtmService.mTaskSupervisor.destroyServicetrackerInstance();
             }
         }
