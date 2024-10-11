@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da04d4dd_96ed3838",
+        "filename": "services/core/Android.bp",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1000889
+      },
+      "writtenOn": "2024-10-11T12:01:35Z",
+      "side": 1,
+      "message": "Needs to be changed to \"vendor.aac.hardware.richtap.vibrator-V1-java\" if https://gerrit.aospa.co/c/AOSPA/android_vendor_aospa/+/41458 is to ever be merged",
+      "revId": "cd5b5ce14d744345d0127e17ac028016a3cfa9b0",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
