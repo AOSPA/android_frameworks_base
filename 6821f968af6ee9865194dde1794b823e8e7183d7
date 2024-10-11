@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ac3791e_fac4c880",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000165
+      },
+      "writtenOn": "2024-10-11T16:44:33Z",
+      "side": 1,
+      "message": "Never mind my uploads, I made a mistake and reverted it back to what it was in patchset 1",
+      "revId": "6821f968af6ee9865194dde1794b823e8e7183d7",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
