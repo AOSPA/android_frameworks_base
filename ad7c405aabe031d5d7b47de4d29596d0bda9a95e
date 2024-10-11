@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3cb0f90e_d814babc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000165
+      },
+      "writtenOn": "2024-10-11T16:19:33Z",
+      "side": 1,
+      "message": "Note that for AIDL devices, this can be fixed in the AIDL: https://git.halogenos.org/halogenOS/android_device_nothing_Spacewar/-/commit/af7cabd05a5318be2e7c4d793cbc7edbfdcd0902",
+      "revId": "ad7c405aabe031d5d7b47de4d29596d0bda9a95e",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
