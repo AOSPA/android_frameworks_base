@@ -296,6 +296,10 @@ public class DozeParameters implements
                 com.android.internal.R.bool.config_displayBlanksAfterDoze);
     }
 
+    public boolean shouldTurnOnDisplayWhenResuming() {
+        return mResources.getBoolean(R.bool.config_displayTurnsOnWhenResumingAod);
+    }
+
     public boolean shouldControlScreenOff() {
         return mControlScreenOffAnimation;
     }

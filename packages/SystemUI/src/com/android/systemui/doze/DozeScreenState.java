@@ -72,6 +72,9 @@ public class DozeScreenState implements DozeMachine.Part {
      */
     public static final int UDFPS_DISPLAY_STATE_DELAY = 1200;
 
+    // Period to keep the display in ON state while transitioning DOZE_AOD_PAUSED => DOZE_AOD.
+    public static final int DISPLAY_ON_PERIOD_RESUMING_AOD = 1000;
+
     private final DozeMachine.Service mDozeService;
     private final Handler mHandler;
     private final Runnable mApplyPendingScreenState = this::applyPendingScreenState;
@@ -134,6 +137,7 @@ public class DozeScreenState implements DozeMachine.Part {
 
     @Override
     public void transitionTo(DozeMachine.State oldState, DozeMachine.State newState) {
+        int oldScreenState = oldState.screenState(mParameters);
         int screenState = newState.screenState(mParameters);
         mDozeHost.cancelGentleSleep();
 
@@ -154,8 +158,7 @@ public class DozeScreenState implements DozeMachine.Part {
 
         final boolean messagePending = mHandler.hasCallbacks(mApplyPendingScreenState);
         final boolean pulseEnding = oldState == DOZE_PULSE_DONE && newState.isAlwaysOn();
-        final boolean turningOn = (oldState == DOZE_AOD_PAUSED || oldState == DOZE)
-                && newState.isAlwaysOn();
+        final boolean turningOn = oldScreenState == Display.STATE_OFF && newState.isAlwaysOn();
         final boolean turningOff = (oldState.isAlwaysOn() && newState == DOZE)
                 || (oldState == DOZE_AOD_PAUSING && newState == DOZE_AOD_PAUSED);
         final boolean justInitialized = oldState == DozeMachine.State.INITIALIZED;
@@ -173,6 +176,10 @@ public class DozeScreenState implements DozeMachine.Part {
             // Delay screen state transition longer if UDFPS is actively authenticating a fp
             boolean shouldDelayTransitionForUDFPS = newState == DOZE_AOD
                     && mUdfpsController != null && mUdfpsController.isFingerDown();
+
+            // Keep the display in ON state when un-pausing AOD.
+            boolean shouldBrieflyTurnOn = turningOn
+                    && mParameters.shouldTurnOnDisplayWhenResuming();
 
             if (!messagePending) {
                 if (DEBUG) {
@@ -197,6 +204,10 @@ public class DozeScreenState implements DozeMachine.Part {
                 } else if (shouldDelayTransitionForUDFPS) {
                     mDozeLog.traceDisplayStateDelayedByUdfps(mPendingScreenState);
                     mHandler.postDelayed(mApplyPendingScreenState, UDFPS_DISPLAY_STATE_DELAY);
+                } else if (shouldBrieflyTurnOn) {
+                    applyScreenState(Display.STATE_ON);
+                    mPendingScreenState = screenState;
+                    mHandler.postDelayed(mApplyPendingScreenState, DISPLAY_ON_PERIOD_RESUMING_AOD);
                 } else {
                     mHandler.post(mApplyPendingScreenState);
                 }
