@@ -319,7 +319,7 @@ public class ChargingControlController extends LineageHealthFeature {
     private ChargeTime getChargeTime() {
         // Get duration to target full time
         final long currentTime = System.currentTimeMillis();
-        Log.i(TAG, "Current time is " + msToString(currentTime));
+        Log.i(TAG, "Current time is " + msToString(mContext, currentTime));
         long targetTime = 0, startTime = currentTime;
         int mode = getMode();
 
@@ -362,8 +362,9 @@ public class ChargingControlController extends LineageHealthFeature {
             return null;
         }
 
-        Log.i(TAG, "Got target time " + msToString(targetTime) + ", start time " +
-                msToString(startTime) + ", current time " + msToString(currentTime));
+        Log.i(TAG, "Got target time " + msToString(mContext, targetTime)
+                + ", start time " + msToString(mContext, startTime)
+                + ", current time " + msToString(mContext, currentTime));
         Log.i(TAG, "Raw: " + targetTime + ", " + startTime + ", " + currentTime);
 
         return new ChargeTime(startTime, targetTime);
