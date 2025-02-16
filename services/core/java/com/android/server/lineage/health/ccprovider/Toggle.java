@@ -10,7 +10,7 @@ import static com.android.internal.lineage.health.HealthInterface.MODE_LIMIT;
 import static com.android.internal.lineage.health.HealthInterface.MODE_MANUAL;
 
 import static com.android.server.lineage.health.Util.msToString;
-import static com.android.server.lineage.health.Util.msToUTCString;
+import static com.android.server.lineage.health.Util.msToHMSString;
 
 import android.content.Context;
 import android.content.Intent;
@@ -143,10 +143,10 @@ public class Toggle extends ChargingControlProvider {
                         BatteryStatsManager.class)).getBatteryUsageStats();
         long remaining = batteryUsageStats.getChargeTimeRemainingMs();
         remaining += mChargingTimeMargin;
-        Log.i(TAG, "Current estimated time to full: " + msToUTCString(remaining));
+        Log.i(TAG, "Current estimated time to full: " + msToHMSString(remaining));
 
         long deltaTime = targetTime - currentTime;
-        Log.i(TAG, "Current time to target: " + msToUTCString(deltaTime));
+        Log.i(TAG, "Current time to target: " + msToHMSString(deltaTime));
 
         switch (stage) {
             case STAGE_NONE, STAGE_INITIAL -> {
@@ -244,7 +244,7 @@ public class Toggle extends ChargingControlProvider {
         pw.println("Provider: " + getClass().getName());
         pw.println("  mIsLimitSet: " + mIsLimitSet);
         pw.println("  mSavedTargetTime: " + msToString(mSavedTargetTime));
-        pw.println("  mEstimatedFullTime: " + msToUTCString(mEstimatedFullTime));
+        pw.println("  mEstimatedFullTime: " + msToHMSString(mEstimatedFullTime));
         pw.println("  mStage: " + mStage);
         pw.println("  mChargeLimitMargin: " + mChargingLimitMargin);
     }
