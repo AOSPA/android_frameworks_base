@@ -45,9 +45,9 @@ class FaceRemovalClient extends RemovalClient<Face, ISenseService> {
             int biometricId, int userId, @NonNull String owner, @NonNull BiometricUtils<Face> utils,
             int sensorId, @NonNull BiometricLogger logger,
             @NonNull BiometricContext biometricContext,
-            @NonNull Map<Integer, Long> authenticatorIds) {
+            @NonNull Map<Integer, Long> authenticatorIds, int reason) {
         super(context, lazyDaemon, token, listener, userId, owner, utils, sensorId, logger,
-                biometricContext, authenticatorIds);
+                biometricContext, authenticatorIds, reason);
         mBiometricId = biometricId;
     }
 
