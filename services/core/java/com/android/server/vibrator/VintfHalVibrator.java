@@ -384,22 +384,12 @@ class VintfHalVibrator {
             try {
                 synchronized (mLock) {
                     int result = 0;
-                    if (mRichTapService != null) {
-                        int[] pattern = RichTapVibrationEffect.getInnerEffect(
-                                prebaked.getEffectId());
-                        int strength = RichTapVibrationEffect.getInnerEffectStrength(
-                                prebaked.getEffectStrength());
-                        if (pattern != null) {
-                            result = 30;
-                            mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
-                        }
-                    }
-                    if (result <= 0 && mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
+                    if (mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
                         // callback instance for each call, overloading the GC.
                         result = mNativeHandler.vibrateWithCallback(mVibratorId, vibrationId,
                                 stepId, prebaked.getEffectId(), prebaked.getEffectStrength());
-                    } else if (result <= 0) {
+                    } else {
                         // Vibrate callback not supported, avoid unnecessary JNI round trip and
                         // simulate HAL callback here using a Handler.
                         int effectId = prebaked.getEffectId();

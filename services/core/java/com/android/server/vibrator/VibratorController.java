@@ -292,22 +292,8 @@ final class VibratorController implements HalVibrator {
         Trace.traceBegin(TRACE_TAG_VIBRATOR, "HalVibrator.onPrebaked");
         try {
             synchronized (mLock) {
-                long duration = 0;
-                if (mRichTapService != null) {
-                    int[] pattern = RichTapVibrationEffect.getInnerEffect(prebaked.getEffectId());
-                    int strength = RichTapVibrationEffect.getInnerEffectStrength(
-                            prebaked.getEffectStrength());
-                    if (pattern != null) {
-                        duration = 30;
-                        mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
-                    } else {
-                        duration = mNativeWrapper.perform(prebaked.getEffectId(),
-                            prebaked.getEffectStrength(), vibrationId, stepId);
-                    }
-                } else {
-                    duration = mNativeWrapper.perform(prebaked.getEffectId(),
-                            prebaked.getEffectStrength(), vibrationId, stepId);
-                }
+                long duration = mNativeWrapper.perform(prebaked.getEffectId(),
+                        prebaked.getEffectStrength(), vibrationId, stepId);
                 if (duration > 0) {
                     updateStateAndNotifyListenersLocked(State.VIBRATING);
                 }
