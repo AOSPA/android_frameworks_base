@@ -35,6 +35,7 @@ import android.hardware.vibrator.IVibrator;
 import android.hardware.vibrator.V1_0.EffectStrength;
 import android.hardware.vibrator.V1_3.Effect;
 import android.net.Uri;
+import android.os.RichTapVibrationEffect;
 import android.os.vibrator.BasicPwleSegment;
 import android.os.vibrator.Flags;
 import android.os.vibrator.PrebakedSegment;
@@ -2479,7 +2480,13 @@ public abstract class VibrationEffect implements Parcelable {
             new Parcelable.Creator<VibrationEffect>() {
                 @Override
                 public VibrationEffect createFromParcel(Parcel in) {
-                    switch (in.readInt()) {
+                    int token = in.readInt();
+                    if (RichTapVibrationEffect.isSupported()
+                            && RichTapVibrationEffect.isExtendedEffect(token)) {
+                        return RichTapVibrationEffect.createExtendedEffect(in);
+                    }
+
+                    switch (token) {
                         case PARCEL_TOKEN_COMPOSED:
                             return new Composed(in);
                         case PARCEL_TOKEN_VENDOR_EFFECT:
