@@ -2435,6 +2435,11 @@ package android.os {
     method @NonNull public String[] getSystemPowerWhitelistExceptIdle();
   }
 
+  public final class DynamicEffect extends android.os.VibrationEffect implements android.os.Parcelable {
+    method public long[] computeCreateWaveformOffOnTimingsOrNull();
+    method public long getDuration();
+  }
+
   public class Environment {
     method public static java.io.File buildPath(java.io.File, java.lang.String...);
   }
