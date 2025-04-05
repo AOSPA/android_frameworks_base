@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 The Android AAC vibration extension
  * Copyright (C) 2024-2025 Paranoid Android
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,75 +14,247 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.os;
 
-import android.annotation.Nullable;
+import android.annotation.NonNull;
 import android.content.res.Resources;
-import android.util.Slog;
+import android.os.VibrationEffect;
+import android.util.Log;
 
 import com.android.internal.R;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 /**
- * RichTap vibration effect implementation.
- * @hide
+ * A RichTapVibrationEffect describes a haptic effect to be performed by a {@link Vibrator}.
+ *
+ * These effects may be any number of things, from single shot vibrations to complex
+ * waveforms, and to AAC extended effects.
  */
 public final class RichTapVibrationEffect {
     private static final String TAG = RichTapVibrationEffect.class.getSimpleName();
 
+    // Parcel tokens for different effect types
+    static final int PARCEL_TOKEN_EXT_PREBAKED = 501;
+    static final int PARCEL_TOKEN_ENVELOPE = 502;
+    static final int PARCEL_TOKEN_PATTERN_HE = 503;
+    static final int PARCEL_TOKEN_PATTERN_HE_LOOP_PARAMETER = 504;
+    static final int PARCEL_TOKEN_HAPTIC_PARAMETER = 505;
+
+    // Client identification constants
+    private static final int OPPO_CLIENT = 0x0001 << 16;
+    private static final int ONEPLUS_CLIENT = 0x0002 << 16;
+    private static final int MI_CLIENT = 0x0003 << 16;
+    private static final int VIVO_CLIENT = 0x0004 << 16;
+    private static final int HONOR_CLIENT = 0x0005 << 16;
+    private static final int LENOVO_CLIENT = 0x0006 << 16;
+    private static final int ZTE_CLIENT = 0x0007 << 16;
+    private static final int AAC_CLIENT = 0x00FF << 16;
+
+    // Version constants
+    private static final int MAJOR_RICHTAP_VERSION = 0x0020 << 8;
+    private static final int MINOR_RICHTAP_VERSION = 0x0010 << 0;
+
+    // Effect strength mapping
+    private static Map<String, Integer> effectStrength = new HashMap<>();
+
+    static {
+        effectStrength.put("LIGHT", VibrationEffect.EFFECT_STRENGTH_LIGHT);
+        effectStrength.put("MEDIUM", VibrationEffect.EFFECT_STRENGTH_MEDIUM);
+        effectStrength.put("STRONG", VibrationEffect.EFFECT_STRENGTH_STRONG);
+    }
+
+    private static String DEFAULT_EXT_PREBAKED_STRENGTH = "STRONG";
+
+    // Support status constants
+    private static final int VIBRATION_EFFECT_SUPPORT_UNKNOWN = 0;
+    private static final int VIBRATION_EFFECT_SUPPORT_YES = 1;
+    private static final int VIBRATION_EFFECT_SUPPORT_NO = 2;
+
+    // Effect ID constants
+    private static final int EFFECT_ID_START = 0x1000;
+
     // Prevent instantiation
-    private RichTapVibrationEffect() {}
+    private RichTapVibrationEffect() {
+        // not called
+    }
 
     /**
      * Checks if RichTap vibration is supported on this device.
+     *
+     * @return A boolean indicating support status
+     * @hide
      */
     public static boolean isSupported() {
-        return Resources.getSystem().getBoolean(R.bool.config_usesRichtapVibration);
+        return Resources.getSystem().getBoolean(R.bool.config_usesRichtapVibration) &&
+               checkIfRichTapSupport() != Vibrator.VIBRATION_EFFECT_SUPPORT_NO;
     }
 
     /**
-     * Gets the inner effect pattern for a given vibration effect ID.
-     * @param id The vibration effect ID
-     * @return Array containing the effect pattern, or null if invalid
+     * Checks if RichTap vibration is supported on this device.
+     *
+     * @return A value indicating support status and version information
      */
-    @Nullable
-    public static int[] getInnerEffect(int id) {
-        switch (id) {
-            case VibrationEffect.EFFECT_CLICK:
-                return new int[]{1, 4097, 0, 100, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            case VibrationEffect.EFFECT_DOUBLE_CLICK:
-                return new int[]{1, 4097, 0, 100, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4097, 70, 100, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            case VibrationEffect.EFFECT_TICK:
-                return new int[]{1, 4097, 0, 100, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            case VibrationEffect.EFFECT_THUD:
-                return new int[]{1, 4097, 0, 100, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            case VibrationEffect.EFFECT_POP:
-                return new int[]{1, 4097, 0, 100, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            case VibrationEffect.EFFECT_HEAVY_CLICK:
-                return new int[]{1, 4097, 0, 100, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            case VibrationEffect.EFFECT_TEXTURE_TICK:
-                return new int[]{1, 4097, 0, 50, 33, 29, 0, 0, 0, 12, 59, 0, 22, 75, -21, 29, 0, 0, 4097, 30, 100, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    public static int checkIfRichTapSupport() {
+        return (AAC_CLIENT | MAJOR_RICHTAP_VERSION | MINOR_RICHTAP_VERSION);
+    }
+
+    /**
+     * Creates an extended pre-baked effect with the specified ID and strength.
+     *
+     * @param effectId The effect ID
+     * @param strength The strength value (1-100)
+     * @return A VibrationEffect instance
+     */
+    @NonNull
+    public static VibrationEffect createExtPreBaked(int effectId, int strength) {
+        VibrationEffect effect = new ExtPrebaked(EFFECT_ID_START + effectId, strength);
+        effect.validate();
+        return effect;
+    }
+
+    /**
+     * Creates an envelope vibration effect with specified parameters.
+     *
+     * @param relativeTimeArr The relative time array (length 4)
+     * @param scaleArr The scale array (length 4)
+     * @param freqArr The frequency array (length 4)
+     * @param steepMode Whether steep mode is enabled
+     * @param amplitude The amplitude value (1-255 or -1 for default)
+     * @return A VibrationEffect instance
+     */
+    @NonNull
+    public static VibrationEffect createEnvelope(
+            @NonNull int[] relativeTimeArr,
+            @NonNull int[] scaleArr,
+            @NonNull int[] freqArr,
+            boolean steepMode,
+            int amplitude) {
+        VibrationEffect effect = new Envelope(relativeTimeArr, scaleArr, freqArr, steepMode, amplitude);
+        effect.validate();
+        return effect;
+    }
+
+    /**
+     * Creates a pattern HE parameter effect with specified parameters.
+     *
+     * @param interval The interval value
+     * @param amplitude The amplitude value (1-255 or -1 for default)
+     * @param freq The frequency value
+     * @return A VibrationEffect instance
+     */
+    @NonNull
+    public static VibrationEffect createPatternHeParameter(int interval, int amplitude, int freq) {
+        VibrationEffect effect = new PatternHeParameter(interval, amplitude, freq);
+        effect.validate();
+        return effect;
+    }
+
+    /**
+     * Creates a haptic parameter effect with specified parameters.
+     *
+     * @param param The parameter array
+     * @param length The length value (must match param.length)
+     * @return A VibrationEffect instance
+     */
+    @NonNull
+    public static VibrationEffect createHapticParameter(@NonNull int[] param, int length) {
+        VibrationEffect effect = new HapticParameter(param, length);
+        effect.validate();
+        return effect;
+    }
+
+    /**
+     * Creates a pattern HE effect with specified parameters and loop settings.
+     *
+     * @param patternInfo The pattern information array
+     * @param looper The looper value
+     * @param interval The interval value
+     * @param amplitude The amplitude value
+     * @param freq The frequency value
+     * @return A VibrationEffect instance
+     */
+    @NonNull
+    public static VibrationEffect createPatternHeWithParam(
+            @NonNull int[] patternInfo,
+            int looper,
+            int interval,
+            int amplitude,
+            int freq) {
+        VibrationEffect effect = new PatternHe(patternInfo, looper, interval, amplitude, freq);
+        effect.validate();
+        return effect;
+    }
+
+    /**
+     * Checks if the given token represents an extended effect.
+     *
+     * @param token The token to check
+     * @return true if it is an extended effect, false otherwise
+     * @hide
+     */
+    public static boolean isExtendedEffect(int token) {
+        switch (token) {
+            case PARCEL_TOKEN_EXT_PREBAKED:
+            case PARCEL_TOKEN_ENVELOPE:
+            case PARCEL_TOKEN_PATTERN_HE_LOOP_PARAMETER:
+            case PARCEL_TOKEN_PATTERN_HE:
+            case PARCEL_TOKEN_HAPTIC_PARAMETER:
+                return true;
             default:
-                Slog.w(TAG, "Invalid effect id: " + id);
-                return null;
+                return false;
         }
     }
 
     /**
-     * Gets the inner effect strength value for a given strength level.
-     * @param strength The desired effect strength
-     * @return Strength value, or 0 if invalid
+     * Creates an extended effect from a Parcel.
+     *
+     * @param in The Parcel to read from
+     * @return A VibrationEffect instance
+     * @hide
      */
-    public static int getInnerEffectStrength(int strength) {
-        switch (strength) {
-            case VibrationEffect.EFFECT_STRENGTH_LIGHT:
-                return 150;
-            case VibrationEffect.EFFECT_STRENGTH_MEDIUM:
-                return 200;
-            case VibrationEffect.EFFECT_STRENGTH_STRONG:
-                return 250;
-            default:
-                Slog.e(TAG, "Invalid effect strength: " + strength);
-                return 0;
-        }
+    @NonNull
+    public static VibrationEffect createExtendedEffect(@NonNull Parcel in) {
+        int offset = in.dataPosition() - Integer.BYTES;
+        in.setDataPosition(offset);
+        return RichTapVibrationEffect.CREATOR.createFromParcel(in);
     }
+
+    /**
+     * Creator for RichTapVibrationEffect instances.
+     * @hide
+     */
+    public static final @NonNull Parcelable.Creator<VibrationEffect> CREATOR =
+            new Parcelable.Creator<VibrationEffect>() {
+                @Override
+                public VibrationEffect createFromParcel(Parcel in) {
+                    int token = in.readInt();
+                    Log.d(TAG, "read token: " + token + "!");
+
+                    switch (token) {
+                        case PARCEL_TOKEN_EXT_PREBAKED:
+                            return new ExtPrebaked(in);
+                        case PARCEL_TOKEN_ENVELOPE:
+                            return new Envelope(in);
+                        case PARCEL_TOKEN_PATTERN_HE_LOOP_PARAMETER:
+                            return new PatternHeParameter(in);
+                        case PARCEL_TOKEN_PATTERN_HE:
+                            return new PatternHe(in);
+                        case PARCEL_TOKEN_HAPTIC_PARAMETER:
+                            return new HapticParameter(in);
+                        default:
+                            throw new IllegalStateException(
+                                    "Unexpected vibration event type token in parcel.");
+                    }
+                }
+
+                @Override
+                public VibrationEffect[] newArray(int size) {
+                    return new VibrationEffect[size];
+                }
+            };
 }
