@@ -33915,6 +33915,21 @@ package android.os {
     field @NonNull public static final android.os.Parcelable.Creator<android.os.DropBoxManager.Entry> CREATOR;
   }
 
+  public final class DynamicEffect extends android.os.VibrationEffect implements android.os.Parcelable {
+    ctor public DynamicEffect(@NonNull String);
+    method public android.os.VibrationEffect applyRepeatingIndefinitely(boolean, int);
+    method public long[] computeCreateWaveformOffOnTimingsOrNull();
+    method @Nullable public static android.os.DynamicEffect create(@Nullable String);
+    method public android.os.VibrationEffect cropToLengthOrNull(int);
+    method public long getDuration();
+    method @NonNull public String getPatternInfo();
+    method public String toDebugString();
+    method public void validate();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.os.DynamicEffect> CREATOR;
+    field public static final boolean DEBUG = true;
+  }
+
   public class Environment {
     ctor public Environment();
     method public static java.io.File getDataDirectory();
@@ -34072,6 +34087,52 @@ package android.os {
     method protected void onLooperPrepared();
     method public boolean quit();
     method public boolean quitSafely();
+  }
+
+  public class HapticPlayer {
+    ctor public HapticPlayer(@NonNull android.os.DynamicEffect);
+    method public void applyPatternHeWithString(@Nullable String, int, int, int, int);
+    method public int getRealLooper(int);
+    method public static boolean isAvailable();
+    method public void start(int);
+    method public void start(int, int, int);
+    method public void start(int, int, int, int);
+    method public void stop();
+    field public static final int CONTINUOUS_EVENT = 4096; // 0x1000
+    field public static final String EVENT_KEY_DURATION = "Duration";
+    field public static final String EVENT_KEY_EVENT = "Event";
+    field public static final String EVENT_KEY_HE_CURVE = "Curve";
+    field public static final String EVENT_KEY_HE_CURVE_POINT_TIME = "Time";
+    field public static final String EVENT_KEY_HE_FREQUENCY = "Frequency";
+    field public static final String EVENT_KEY_HE_INTENSITY = "Intensity";
+    field public static final String EVENT_KEY_HE_PARAMETERS = "Parameters";
+    field public static final String EVENT_KEY_HE_TYPE = "Type";
+    field public static final String EVENT_KEY_RELATIVE_TIME = "RelativeTime";
+    field public static final String EVENT_TYPE_HE_CONTINUOUS_NAME = "continuous";
+    field public static final String EVENT_TYPE_HE_TRANSIENT_NAME = "transient";
+    field public static final int FORMAT_VERSION = 2; // 0x2
+    field public static final int HE2_0_PATTERN_WRAP_NUM = 10; // 0xa
+    field public static final int HE_CURVE_POINT_0_FREQUENCY = 9; // 0x9
+    field public static final int HE_CURVE_POINT_0_INTENSITY = 8; // 0x8
+    field public static final int HE_CURVE_POINT_0_TIME = 7; // 0x7
+    field public static final int HE_DEFAULT_DURATION = 0; // 0x0
+    field public static final int HE_DEFAULT_RELATIVE_TIME = 400; // 0x190
+    field public static final int HE_DURATION = 4; // 0x4
+    field public static final int HE_FREQUENCY = 3; // 0x3
+    field public static final int HE_INTENSITY = 2; // 0x2
+    field public static final String HE_META_DATA_KEY = "Metadata";
+    field public static final int HE_POINT_COUNT = 6; // 0x6
+    field public static final int HE_RELATIVE_TIME = 1; // 0x1
+    field public static final int HE_TYPE = 0; // 0x0
+    field public static final int HE_VALUE_LENGTH = 55; // 0x37
+    field public static final String HE_VERSION_KEY = "Version";
+    field public static final int HE_VIB_INDEX = 5; // 0x5
+    field public static final String PATTERN_KEY_EVENT_VIB_ID = "Index";
+    field public static final String PATTERN_KEY_PATTERN = "Pattern";
+    field public static final String PATTERN_KEY_PATTERN_ABS_TIME = "AbsoluteTime";
+    field public static final String PATTERN_KEY_PATTERN_LIST = "PatternList";
+    field public static final int TRANSIENT_EVENT = 4097; // 0x1001
+    field public static final String VIBRATE_REASON = "DynamicEffect";
   }
 
   public class HardwarePropertiesManager {

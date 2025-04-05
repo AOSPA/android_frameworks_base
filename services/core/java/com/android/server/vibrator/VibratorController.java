@@ -364,16 +364,9 @@ final class VibratorController {
             synchronized (mLock) {
                 long duration = 0;
                 if (mRichTapService != null) {
-                    int[] pattern = RichTapVibrationEffect.getInnerEffect(prebaked.getEffectId());
-                    int strength = RichTapVibrationEffect.getInnerEffectStrength(
-                            prebaked.getEffectStrength());
-                    if (pattern != null) {
-                        duration = 30;
-                        mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
-                    } else {
-                        duration = mNativeWrapper.perform(prebaked.getEffectId(),
-                            prebaked.getEffectStrength(), vibrationId, stepId);
-                    }
+                    duration = 30;
+                    mRichTapService.richTapVibratorPerform(prebaked.getEffectId(),
+                        (byte) prebaked.getEffectStrength());
                 }
                 if (duration > 0) {
                     mCurrentAmplitude = -1;
