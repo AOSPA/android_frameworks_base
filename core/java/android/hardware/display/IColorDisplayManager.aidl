@@ -54,7 +54,14 @@ interface IColorDisplayManager {
     void setColorMode(int colorMode);
 
     int getColorBalanceChannel(int channel);
+    @EnforcePermission("CONTROL_DISPLAY_COLOR_TRANSFORMS")
     boolean setColorBalanceChannel(int channel, int value);
+    int getColorTemperature();
+    @EnforcePermission("CONTROL_DISPLAY_COLOR_TRANSFORMS")
+    boolean setColorTemperature(int value);
+    int getUserSaturationLevel();
+    @EnforcePermission("CONTROL_DISPLAY_COLOR_TRANSFORMS")
+    boolean setUserSaturationLevel(int value);
 
     boolean isDisplayWhiteBalanceEnabled();
     @EnforcePermission("CONTROL_DISPLAY_COLOR_TRANSFORMS")

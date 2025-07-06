@@ -126,6 +126,8 @@ public final class ColorDisplayService extends SystemService {
     private static final int MSG_APPLY_DISPLAY_WHITE_BALANCE = 5;
     private static final int MSG_APPLY_REDUCE_BRIGHT_COLORS = 6;
     private static final int MSG_APPLY_DISPLAY_COLOR_BALANCE = 7;
+    private static final int MSG_APPLY_DISPLAY_COLOR_TEMPERATURE = 8;
+    private static final int MSG_APPLY_USER_SATURATION = 9;
 
     /**
      * Return value if a setting has not been set.
@@ -179,8 +181,12 @@ public final class ColorDisplayService extends SystemService {
             new NightDisplayTintController();
     private final ColorBalanceTintController mColorBalanceTintController =
             new ColorBalanceTintController();
+    private final DisplayColorTemperatureTintController mColorTemperatureTintController =
+            new DisplayColorTemperatureTintController();
     private final TintController mGlobalSaturationTintController =
             new GlobalSaturationTintController();
+    private final TintController mUserSaturationTintController =
+            new UserSaturationTintController();
     private final ReduceBrightColorsTintController mReduceBrightColorsTintController;
 
     @VisibleForTesting
@@ -486,6 +492,12 @@ public final class ColorDisplayService extends SystemService {
                             case Secure.DISPLAY_COLOR_BALANCE_GREEN:
                                 mHandler.sendEmptyMessage(MSG_APPLY_DISPLAY_COLOR_BALANCE);
                                 break;
+                            case Secure.DISPLAY_COLOR_SATURATION:
+                                mHandler.sendEmptyMessage(MSG_APPLY_USER_SATURATION);
+                                break;
+                            case Secure.DISPLAY_COLOR_TEMPERATURE:
+                                mHandler.sendEmptyMessage(MSG_APPLY_DISPLAY_COLOR_TEMPERATURE);
+                                break;
                             case Secure.DISPLAY_WHITE_BALANCE_ENABLED:
                                 updateDisplayWhiteBalanceStatus();
                                 break;
@@ -527,6 +539,10 @@ public final class ColorDisplayService extends SystemService {
         cr.registerContentObserver(Secure.getUriFor(Secure.DISPLAY_COLOR_BALANCE_GREEN),
                 false /* notifyForDescendants */, mContentObserver, mCurrentUser);
         cr.registerContentObserver(Secure.getUriFor(Secure.DISPLAY_COLOR_BALANCE_BLUE),
+                false /* notifyForDescendants */, mContentObserver, mCurrentUser);
+        cr.registerContentObserver(Secure.getUriFor(Secure.DISPLAY_COLOR_TEMPERATURE),
+                false /* notifyForDescendants */, mContentObserver, mCurrentUser);
+        cr.registerContentObserver(Secure.getUriFor(Secure.DISPLAY_COLOR_SATURATION),
                 false /* notifyForDescendants */, mContentObserver, mCurrentUser);
         cr.registerContentObserver(Secure.getUriFor(Secure.DISPLAY_WHITE_BALANCE_ENABLED),
                 false /* notifyForDescendants */, mContentObserver, mCurrentUser);
@@ -591,6 +607,14 @@ public final class ColorDisplayService extends SystemService {
 
         if (mColorBalanceTintController.isAvailable(getContext())) {
             mHandler.sendEmptyMessage(MSG_APPLY_DISPLAY_COLOR_BALANCE);
+        }
+
+        if (mColorTemperatureTintController.isAvailable(getContext())) {
+            mHandler.sendEmptyMessage(MSG_APPLY_DISPLAY_COLOR_TEMPERATURE);
+        }
+
+        if (mUserSaturationTintController.isAvailable(getContext())) {
+            mHandler.sendEmptyMessage(MSG_APPLY_USER_SATURATION);
         }
     }
 
@@ -1327,6 +1351,46 @@ public final class ColorDisplayService extends SystemService {
                 ColorBalanceTintController.channelToKey(channel), 255, mCurrentUser);
     }
 
+    private boolean setColorTemperatureInternal(int value) {
+        if (mCurrentUser == UserHandle.USER_NULL) {
+            return false;
+        }
+
+        boolean putSuccess = Secure.putIntForUser(getContext().getContentResolver(),
+                Secure.DISPLAY_COLOR_TEMPERATURE, value, mCurrentUser);
+        if (putSuccess) {
+            mHandler.sendEmptyMessage(MSG_APPLY_DISPLAY_COLOR_TEMPERATURE);
+        }
+
+        return putSuccess;
+    }
+
+    private int getColorTemperatureInternal() {
+        return Secure.getIntForUser(getContext().getContentResolver(),
+                Secure.DISPLAY_COLOR_TEMPERATURE,
+                DisplayColorTemperatureTintController.DEFAULT_TEMPERATURE,
+                mCurrentUser);
+    }
+
+    private boolean setUserSaturationLevelInternal(int value) {
+        if (mCurrentUser == UserHandle.USER_NULL) {
+            return false;
+        }
+
+        boolean putSuccess = Secure.putIntForUser(getContext().getContentResolver(),
+                Secure.DISPLAY_COLOR_SATURATION, value, mCurrentUser);
+        if (putSuccess) {
+            mHandler.sendEmptyMessage(MSG_APPLY_USER_SATURATION);
+        }
+
+        return putSuccess;
+    }
+
+    private int getUserSaturationLevelInternal() {
+        return Secure.getIntForUser(getContext().getContentResolver(),
+                Secure.DISPLAY_COLOR_SATURATION, 100, mCurrentUser);
+    }
+
     private void dumpInternal(PrintWriter pw) {
         pw.println("COLOR DISPLAY MANAGER dumpsys (color_display)");
 
@@ -2004,6 +2068,14 @@ public final class ColorDisplayService extends SystemService {
                     mColorBalanceTintController.updateBalance(getContext(), mCurrentUser);
                     applyTint(mColorBalanceTintController, true);
                     break;
+                case MSG_APPLY_DISPLAY_COLOR_TEMPERATURE:
+                    mColorTemperatureTintController.setMatrix(getColorTemperatureInternal());
+                    applyTint(mColorTemperatureTintController, true);
+                    break;
+                case MSG_APPLY_USER_SATURATION:
+                    mUserSaturationTintController.setMatrix(getUserSaturationLevelInternal());
+                    applyTint(mUserSaturationTintController, true);
+                    break;
             }
         }
     }
@@ -2278,6 +2350,48 @@ public final class ColorDisplayService extends SystemService {
             final long token = Binder.clearCallingIdentity();
             try {
                 return getColorBalanceChannelInternal(channel);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
+        @android.annotation.EnforcePermission(android.Manifest.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS)
+        @Override
+        public boolean setColorTemperature(int value) {
+            final long token = Binder.clearCallingIdentity();
+            try {
+                return setColorTemperatureInternal(value);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
+        @Override
+        public int getColorTemperature() {
+            final long token = Binder.clearCallingIdentity();
+            try {
+                return getColorTemperatureInternal();
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
+        @android.annotation.EnforcePermission(android.Manifest.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS)
+        @Override
+        public boolean setUserSaturationLevel(int value) {
+            final long token = Binder.clearCallingIdentity();
+            try {
+                return setUserSaturationLevelInternal(value);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
+        @Override
+        public int getUserSaturationLevel() {
+            final long token = Binder.clearCallingIdentity();
+            try {
+                return getUserSaturationLevelInternal();
             } finally {
                 Binder.restoreCallingIdentity(token);
             }

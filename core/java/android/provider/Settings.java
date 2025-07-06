@@ -12808,6 +12808,18 @@ public final class Settings {
         public static final String DISPLAY_COLOR_BALANCE_BLUE = "display_color_balance_blue";
 
         /**
+         * Display color temperature in Kelvin, from 3000 to 9000, defaults to 6500.
+         * @hide
+         */
+        public static final String DISPLAY_COLOR_TEMPERATURE = "display_color_temperature";
+
+        /**
+         * Display color saturation in int, from 0 to 200, defaults to 100.
+         * @hide
+         */
+        public static final String DISPLAY_COLOR_SATURATION = "display_color_saturation";
+
+        /**
          * Control whether display white balance is currently enabled.
          * @hide
          */

@@ -444,6 +444,50 @@ public final class ColorDisplayManager {
     }
 
     /**
+     * Set the global color temperature.
+     *
+     * @param value in kelvin 3000-9000 (inclusive), default 6500
+     * @return whether the change was successful
+     * @hide
+     */
+    @RequiresPermission(android.Manifest.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS)
+    public boolean setColorTemperature(int value) {
+        return mManager.setColorTemperature(value);
+    }
+
+    /**
+     * Get the current global color temperature.
+     *
+     * @return color temperature in kelvin, 3000-9000 (inclusive), default 6500
+     * @hide
+     */
+    public int getColorTemperature() {
+        return mManager.getColorTemperature();
+    }
+
+    /**
+     * Set the global color saturation.
+     *
+     * @param value integer between 0 and 200, default 200
+     * @return whether the change was successful
+     * @hide
+     */
+    @RequiresPermission(android.Manifest.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS)
+    public boolean setUserSaturationLevel(int value) {
+        return mManager.setUserSaturationLevel(value);
+    }
+
+    /**
+     * Get the current global color saturation.
+     *
+     * @return saturation value between 0 and 200, default 100
+     * @hide
+     */
+    public int getUserSaturationLevel() {
+        return mManager.getUserSaturationLevel();
+    }
+
+    /**
      * Enables or disables display white balance.
      *
      * @hide
@@ -782,6 +826,38 @@ public final class ColorDisplayManager {
         int getColorBalanceChannel(int channel) {
             try {
                 return mCdm.getColorBalanceChannel(channel);
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
+        }
+
+        boolean setColorTemperature(int value) {
+            try {
+                return mCdm.setColorTemperature(value);
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
+        }
+
+        int getColorTemperature() {
+            try {
+                return mCdm.getColorTemperature();
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
+        }
+
+        boolean setUserSaturationLevel(int value) {
+            try {
+                return mCdm.setUserSaturationLevel(value);
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
+        }
+
+        int getUserSaturationLevel() {
+            try {
+                return mCdm.getUserSaturationLevel();
             } catch (RemoteException e) {
                 throw e.rethrowFromSystemServer();
             }
