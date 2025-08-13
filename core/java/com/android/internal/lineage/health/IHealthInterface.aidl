@@ -37,4 +37,9 @@ interface IHealthInterface {
 
     boolean resetChargingControl();
     boolean allowFineGrainedSettings();
+
+    boolean isFastChargeSupported();
+    int[] getSupportedFastChargeModes();
+    int getFastChargeMode();
+    boolean setFastChargeMode(int mode);
 }

@@ -6569,6 +6569,12 @@ public final class Settings {
         public static final String CHARGING_CONTROL_LIMIT = "charging_control_charging_limit";
 
         /**
+         * Fast charging mode.
+         * @hide
+         */
+        public static final String FAST_CHARGE_MODE = "fast_charge_mode";
+
+        /**
          * Setting to enable camera flash notification feature.
          * <ul>
          *     <li> 0 = Off

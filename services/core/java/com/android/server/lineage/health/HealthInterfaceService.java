@@ -47,6 +47,7 @@ public class HealthInterfaceService extends SystemService {
 
     // Health features
     private ChargingControlController mCCC;
+    private FastChargeController mFCC;
 
     public HealthInterfaceService(Context context) {
         super(context);
@@ -62,6 +63,10 @@ public class HealthInterfaceService extends SystemService {
         mCCC = new ChargingControlController(mContext, mHandler);
         if (mCCC.isSupported()) {
             mFeatures.add(mCCC);
+        }
+        mFCC = new FastChargeController(mContext, mHandler);
+        if (mFCC.isSupported()) {
+            mFeatures.add(mFCC);
         }
 
         if (!mFeatures.isEmpty()) {
@@ -148,6 +153,26 @@ public class HealthInterfaceService extends SystemService {
             // We allow fine-grained settings if bypass and toggle or limit modes are supported
             return mCCC.isChargingModeSupported(ChargingControlSupportedMode.TOGGLE)
                     || mCCC.isChargingModeSupported(ChargingControlSupportedMode.LIMIT);
+        }
+
+        @Override
+        public boolean isFastChargeSupported() {
+            return mFCC.isSupported();
+        }
+
+        @Override
+        public int[] getSupportedFastChargeModes() {
+            return mFCC.getSupportedFastChargeModes();
+        }
+
+        @Override
+        public int getFastChargeMode() {
+            return mFCC.getFastChargeMode();
+        }
+
+        @Override
+        public boolean setFastChargeMode(int mode) {
+            return mFCC.setFastChargeMode(mode);
         }
 
         @Override

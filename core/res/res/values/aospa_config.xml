@@ -103,6 +103,19 @@
          to disable DC dimming -->
     <string name="config_deviceDcDimmingDisableValue">0</string>
 
+    <!-- Fast charge -->
+    <string-array name="charging_speed_entries" translatable="false">
+        <item>@string/charging_speed_slow</item>
+        <item>@string/charging_speed_fast</item>
+        <item>@string/charging_speed_super_fast</item>
+    </string-array>
+
+    <string-array name="charging_speed_values" translatable="false">
+        <item>1</item> <!-- FastChargeMode.NONE -->
+        <item>2</item> <!-- FastChargeMode.FAST_CHARGE -->
+        <item>4</item> <!-- FastChargeMode.SUPER_FAST_CHARGE -->
+    </string-array>
+
     <!-- Whether charging control should be enabled by default -->
     <bool name="config_chargingControlEnabled">false</bool>
     <!-- Default charging control mode.
