@@ -280,4 +280,65 @@ public class HealthInterface {
             return false;
         }
     }
+
+    /**
+     * Returns whether fast charge is supported
+     *
+     * @return true if fast charge is supported
+     */
+    public boolean isFastChargeSupported() {
+        try {
+            return checkService() && sService.isFastChargeSupported();
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets supported fast charge mode
+     *
+     * @return true supported fast charge modes
+     */
+    public int[] getSupportedFastChargeModes() {
+        try {
+            return checkService() ? sService.getSupportedFastChargeModes() : new int[0];
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+
+        return new int[0];
+    }
+
+    /**
+     * Gets current fast charge mode
+     *
+     * @return true current fast charge mode
+     */
+    public int getFastChargeMode() {
+        try {
+            return checkService() ? sService.getFastChargeMode() : 0;
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+
+        return 0;
+    }
+
+    /**
+     * Sets selected fast charge mode
+     *
+     * @param mode the fast charge mode
+     * @return true if fast charge was set
+     */
+    public boolean setFastChargeMode(int mode) {
+        try {
+            return checkService() && sService.setFastChargeMode(mode);
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
+
+        return false;
+    }
 }
