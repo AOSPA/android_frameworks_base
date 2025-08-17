@@ -44,7 +44,7 @@ public class ChargingControlNotification {
         // Register notification monitor
         IntentFilter notificationFilter = new IntentFilter(ACTION_CHARGING_CONTROL_CANCEL_ONCE);
         mContext.registerReceiver(new LineageHealthNotificationBroadcastReceiver(),
-                notificationFilter);
+                notificationFilter, Context.RECEIVER_EXPORTED);
     }
 
     public void post(int limit, boolean done) {

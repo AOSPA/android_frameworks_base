@@ -226,7 +226,7 @@ public class ChargingControlController extends LineageHealthFeature {
 
     private void updateBatteryInfo() {
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        Intent batteryStatus = mContext.registerReceiver(null, ifilter);
+        Intent batteryStatus = mContext.registerReceiver(null, ifilter, Context.RECEIVER_EXPORTED);
         if (batteryStatus == null) {
             Log.e(TAG, "batteryStatus is NULL!");
             return;
