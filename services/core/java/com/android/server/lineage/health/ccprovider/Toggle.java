@@ -122,7 +122,7 @@ public class Toggle extends ChargingControlProvider {
         chgCtrlStage stage = mStage;
 
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        Intent batteryStatus = mContext.registerReceiver(null, ifilter);
+        Intent batteryStatus = mContext.registerReceiver(null, ifilter, Context.RECEIVER_EXPORTED);
         boolean plugged = batteryStatus.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) != 0;
 
         if (startTime > currentTime && stage != chgCtrlStage.STAGE_CONTINUE) {
