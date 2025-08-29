@@ -384,13 +384,18 @@ class VintfHalVibrator {
             try {
                 synchronized (mLock) {
                     int result = 0;
-                    if (mRichTapService != null) {
-                        int[] pattern = getRichTapInnerEffect(prebaked.getEffectId());
-                        int strength = getRichTapInnerEffectStrength(prebaked.getEffectStrength());
-                        if (pattern != null) {
-                            result = 30;
-                            mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
-                        }
+                    boolean useRichTap = mRichTapService != null
+                            && RichTapVibrationEffect.isInnerEffectSupported(
+                                    prebaked.getEffectId());
+                    int strength = useRichTap
+                            ? RichTapVibrationEffect.getInnerEffectStrength(
+                                    prebaked.getEffectStrength())
+                            : 0;
+                    if (strength > 0) {
+                        result = 30;
+                        int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
+                                prebaked.getEffectId());
+                        mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
                     }
                     if (result <= 0 && mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
@@ -598,43 +603,6 @@ class VintfHalVibrator {
 
         private Runnable newVibrationCallback(long vibrationId, long stepId) {
             return () -> mCallbacks.onVibrationStepComplete(mVibratorId, vibrationId, stepId);
-        }
-
-        @Nullable
-        private static int[] getRichTapInnerEffect(int effectId) {
-            switch (effectId) {
-                case VibrationEffect.EFFECT_CLICK:
-                    return new int[]{1, 4097, 0, 100, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                case VibrationEffect.EFFECT_DOUBLE_CLICK:
-                    return new int[]{1, 4097, 0, 100, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4097, 70, 100, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                case VibrationEffect.EFFECT_TICK:
-                    return new int[]{1, 4097, 0, 100, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                case VibrationEffect.EFFECT_THUD:
-                    return new int[]{1, 4097, 0, 100, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                case VibrationEffect.EFFECT_POP:
-                    return new int[]{1, 4097, 0, 100, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                case VibrationEffect.EFFECT_HEAVY_CLICK:
-                    return new int[]{1, 4097, 0, 100, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                case VibrationEffect.EFFECT_TEXTURE_TICK:
-                    return new int[]{1, 4097, 0, 50, 33, 29, 0, 0, 0, 12, 59, 0, 22, 75, -21, 29, 0, 0, 4097, 30, 100, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                default:
-                    Slog.w(TAG, "Invalid effect id: " + effectId);
-                    return null;
-            }
-        }
-
-        private static int getRichTapInnerEffectStrength(int strength) {
-            switch (strength) {
-                case VibrationEffect.EFFECT_STRENGTH_LIGHT:
-                    return 150;
-                case VibrationEffect.EFFECT_STRENGTH_MEDIUM:
-                    return 200;
-                case VibrationEffect.EFFECT_STRENGTH_STRONG:
-                    return 250;
-                default:
-                    Slog.e(TAG, "Invalid effect strength: " + strength);
-                    return 0;
-            }
         }
 
         private VibratorInfo loadVibratorInfo(int vibratorId) {
