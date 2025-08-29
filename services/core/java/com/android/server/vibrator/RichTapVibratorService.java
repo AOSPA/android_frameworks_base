@@ -261,21 +261,21 @@ public class RichTapVibratorService {
      *
      * @param id    The effect ID
      * @param scale The scale value
-     * @return The timeout duration
+     * @return The command id returned by the HAL
      */
     public int richTapVibratorPerform(int id, byte scale) {
-        int timeout = 0;
+        int cmdId = 0;
         try {
             IRichtapVibrator service = getRichtapService();
             if (service != null) {
                 if (DEBUG) Slog.d(TAG, "Performing predefined effect");
-                timeout = service.perform(id, scale, mCallback);
-                if (DEBUG) Slog.d(TAG, "Effect timeout: " + timeout);
+                cmdId = service.perform(id, scale, mCallback);
+                if (DEBUG) Slog.d(TAG, "Effect command id: " + cmdId);
             }
         } catch (Exception e) {
             Slog.e(TAG, "Failed to perform effect", e);
         }
-        return timeout;
+        return cmdId;
     }
 
     /**
