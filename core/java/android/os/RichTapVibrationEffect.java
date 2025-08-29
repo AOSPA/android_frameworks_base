@@ -21,6 +21,7 @@ import android.annotation.NonNull;
 import android.content.res.Resources;
 import android.os.VibrationEffect;
 import android.util.Log;
+import android.util.Slog;
 
 import com.android.internal.R;
 
@@ -101,6 +102,57 @@ public final class RichTapVibrationEffect {
      */
     public static int checkIfRichTapSupport() {
         return (AAC_CLIENT | MAJOR_RICHTAP_VERSION | MINOR_RICHTAP_VERSION);
+    }
+
+    /**
+     * Checks whether the given prebaked effect ID is handled by RichTap.
+     * @param id The vibration effect ID
+     * @return {@code true} if the effect can be routed through RichTap
+     * @hide
+     */
+    public static boolean isInnerEffectSupported(int id) {
+        switch (id) {
+            case VibrationEffect.EFFECT_CLICK:
+            case VibrationEffect.EFFECT_DOUBLE_CLICK:
+            case VibrationEffect.EFFECT_TICK:
+            case VibrationEffect.EFFECT_THUD:
+            case VibrationEffect.EFFECT_POP:
+            case VibrationEffect.EFFECT_HEAVY_CLICK:
+            case VibrationEffect.EFFECT_TEXTURE_TICK:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Gets the RichTap prebaked effect ID for a standard Android prebaked effect ID.
+     * @param id The Android vibration effect ID
+     * @return The RichTap effect ID
+     * @hide
+     */
+    public static int getInnerEffectId(int id) {
+        return EFFECT_ID_START + id;
+    }
+
+    /**
+     * Gets the inner effect strength value for a given strength level.
+     * @param strength The desired effect strength
+     * @return Strength value, or 0 if invalid
+     * @hide
+     */
+    public static int getInnerEffectStrength(int strength) {
+        switch (strength) {
+            case VibrationEffect.EFFECT_STRENGTH_LIGHT:
+                return 150;
+            case VibrationEffect.EFFECT_STRENGTH_MEDIUM:
+                return 200;
+            case VibrationEffect.EFFECT_STRENGTH_STRONG:
+                return 250;
+            default:
+                Slog.e(TAG, "Invalid effect strength: " + strength);
+                return 0;
+        }
     }
 
     /**
