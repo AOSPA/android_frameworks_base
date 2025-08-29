@@ -17,6 +17,7 @@
 
 package android.os;
 
+import android.annotation.Nullable;
 import android.annotation.NonNull;
 import android.content.res.Resources;
 import android.os.VibrationEffect;
@@ -101,6 +102,53 @@ public final class RichTapVibrationEffect {
      */
     public static int checkIfRichTapSupport() {
         return (AAC_CLIENT | MAJOR_RICHTAP_VERSION | MINOR_RICHTAP_VERSION);
+    }
+
+    /**
+     * Gets the inner effect pattern for a given vibration effect ID.
+     * @param id The vibration effect ID
+     * @return Array containing the effect pattern, or null if invalid
+     */
+    @Nullable
+    public static int[] getInnerEffect(int id) {
+        switch (id) {
+            case VibrationEffect.EFFECT_CLICK:
+                return new int[]{1, 4097, 0, 100, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            case VibrationEffect.EFFECT_DOUBLE_CLICK:
+                return new int[]{1, 4097, 0, 100, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4097, 70, 100, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            case VibrationEffect.EFFECT_TICK:
+                return new int[]{1, 4097, 0, 100, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            case VibrationEffect.EFFECT_THUD:
+                return new int[]{1, 4097, 0, 100, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            case VibrationEffect.EFFECT_POP:
+                return new int[]{1, 4097, 0, 100, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            case VibrationEffect.EFFECT_HEAVY_CLICK:
+                return new int[]{1, 4097, 0, 100, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            case VibrationEffect.EFFECT_TEXTURE_TICK:
+                return new int[]{1, 4097, 0, 50, 33, 29, 0, 0, 0, 12, 59, 0, 22, 75, -21, 29, 0, 0, 4097, 30, 100, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            default:
+                Slog.w(TAG, "Invalid effect id: " + id);
+                return null;
+        }
+    }
+
+    /**
+     * Gets the inner effect strength value for a given strength level.
+     * @param strength The desired effect strength
+     * @return Strength value, or 0 if invalid
+     */
+    public static int getInnerEffectStrength(int strength) {
+        switch (strength) {
+            case VibrationEffect.EFFECT_STRENGTH_LIGHT:
+                return 150;
+            case VibrationEffect.EFFECT_STRENGTH_MEDIUM:
+                return 200;
+            case VibrationEffect.EFFECT_STRENGTH_STRONG:
+                return 250;
+            default:
+                Slog.e(TAG, "Invalid effect strength: " + strength);
+                return 0;
+        }
     }
 
     /**
