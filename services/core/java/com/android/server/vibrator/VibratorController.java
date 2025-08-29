@@ -293,13 +293,15 @@ final class VibratorController implements HalVibrator {
         try {
             synchronized (mLock) {
                 long duration = 0;
-                if (mRichTapService != null) {
-                    int[] pattern = RichTapVibrationEffect.getInnerEffect(prebaked.getEffectId());
+                if (mRichTapService != null && RichTapVibrationEffect.isInnerEffectSupported(
+                        prebaked.getEffectId())) {
                     int strength = RichTapVibrationEffect.getInnerEffectStrength(
                             prebaked.getEffectStrength());
-                    if (pattern != null) {
+                    if (strength > 0) {
                         duration = 30;
-                        mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
+                        int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
+                                prebaked.getEffectId());
+                        mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
                     } else {
                         duration = mNativeWrapper.perform(prebaked.getEffectId(),
                             prebaked.getEffectStrength(), vibrationId, stepId);

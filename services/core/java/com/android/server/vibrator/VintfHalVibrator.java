@@ -384,15 +384,18 @@ class VintfHalVibrator {
             try {
                 synchronized (mLock) {
                     int result = 0;
-                    if (mRichTapService != null) {
-                        int[] pattern = RichTapVibrationEffect.getInnerEffect(
+                    boolean useRichTap = mRichTapService != null
+                            && RichTapVibrationEffect.isInnerEffectSupported(
+                                    prebaked.getEffectId());
+                    int strength = useRichTap
+                            ? RichTapVibrationEffect.getInnerEffectStrength(
+                                    prebaked.getEffectStrength())
+                            : 0;
+                    if (strength > 0) {
+                        result = 30;
+                        int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
                                 prebaked.getEffectId());
-                        int strength = RichTapVibrationEffect.getInnerEffectStrength(
-                                prebaked.getEffectStrength());
-                        if (pattern != null) {
-                            result = 30;
-                            mRichTapService.richTapVibratorOnRawPattern(pattern, strength, 0);
-                        }
+                        mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
                     }
                     if (result <= 0 && mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
