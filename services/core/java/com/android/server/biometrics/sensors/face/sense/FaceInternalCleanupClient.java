@@ -19,6 +19,7 @@ package com.android.server.biometrics.sensors.face.sense;
 
 import android.annotation.NonNull;
 import android.content.Context;
+import android.hardware.biometrics.BiometricsProtoEnums;
 import android.hardware.face.Face;
 import android.os.IBinder;
 
@@ -66,5 +67,10 @@ class FaceInternalCleanupClient extends InternalCleanupClient<Face, ISenseServic
         return new FaceRemovalClient(context, lazyDaemon, token,
                 null /* ClientMonitorCallbackConverter */, biometricId, userId, owner, utils,
                 sensorId, logger, biometricContext, authenticatorIds, reason);
+    }
+
+    @Override
+    protected int getModality() {
+        return BiometricsProtoEnums.MODALITY_FACE;
     }
 }
