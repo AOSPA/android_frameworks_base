@@ -389,7 +389,7 @@ public class SenseProvider implements ServiceProvider {
     }
 
     public SenseProvider(Context context, BiometricStateCallback biometricStateCallback, FaceSensorPropertiesInternal sensorProps, LockoutResetDispatcher lockoutResetDispatcher) {
-        this(context, biometricStateCallback, sensorProps, lockoutResetDispatcher, new BiometricScheduler<>(context, 0, null));
+        this(context, biometricStateCallback, sensorProps, lockoutResetDispatcher, new BiometricScheduler<>(0, null));
     }
 
     private synchronized ISenseService getDaemon() {
@@ -702,7 +702,8 @@ public class SenseProvider implements ServiceProvider {
                     FaceUtils.getLegacyInstance(mSensorId), mSensorId,
                     createLogger(BiometricsProtoEnums.ACTION_REMOVE,
                             BiometricsProtoEnums.CLIENT_UNKNOWN),
-                    mBiometricContext, mAuthenticatorIds, BiometricsProtoEnums.UNENROLL_REASON_USER_REQUEST);
+                    mBiometricContext, mAuthenticatorIds,
+                    BiometricsProtoEnums.UNENROLL_REASON_USER_REQUEST);
             mScheduler.scheduleClientMonitor(client, mBiometricStateCallback);
         });
     }
@@ -730,7 +731,8 @@ public class SenseProvider implements ServiceProvider {
                     FaceUtils.getLegacyInstance(mSensorId), mSensorId,
                     createLogger(BiometricsProtoEnums.ACTION_REMOVE,
                             BiometricsProtoEnums.CLIENT_UNKNOWN),
-                    mBiometricContext, mAuthenticatorIds, BiometricsProtoEnums.UNENROLL_REASON_USER_REQUEST);
+                    mBiometricContext, mAuthenticatorIds,
+                    BiometricsProtoEnums.UNENROLL_REASON_USER_REQUEST);
             mScheduler.scheduleClientMonitor(client, mBiometricStateCallback);
         });
     }
