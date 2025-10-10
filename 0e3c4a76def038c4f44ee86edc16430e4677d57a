@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6176e158_06d7c93b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000895
+      },
+      "writtenOn": "2025-10-10T06:30:40Z",
+      "side": 1,
+      "message": "Merged on LOS",
+      "revId": "0e3c4a76def038c4f44ee86edc16430e4677d57a",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
