@@ -114,7 +114,7 @@ public class FastChargeController extends LineageHealthFeature {
     private void handleSettingChange() {
         try {
             mFastCharge.setFastChargeMode(getFastChargeMode());
-        } catch (RemoteException e) {
+        } catch (Exception e) {
         }
     }
 
