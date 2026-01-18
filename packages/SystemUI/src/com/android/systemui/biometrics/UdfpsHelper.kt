@@ -197,7 +197,6 @@ class UdfpsHelper(
                     displayManager.registerDisplayListener(
                         displayListener,
                         null,
-                        /* eventFlags */ 0,
                         DisplayManager.EVENT_TYPE_DISPLAY_BRIGHTNESS,
                     )
                     view.isVisible = false
