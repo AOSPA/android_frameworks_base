@@ -804,11 +804,15 @@ public class NotificationGutsManager implements NotifGutsViewManager, CoreStarta
     }
 
     boolean affectedByWorkProfileLock(ExpandableNotificationRow row) {
-        if (NotificationBundleUi.isEnabled()
-                && row.getEntryAdapter() instanceof BundleEntryAdapter) {
-            return false;
+        int userId;
+        if (NotificationBundleUi.isEnabled()) {
+            if (row.getEntryAdapter() instanceof BundleEntryAdapter) {
+                return false;
+            }
+            userId = row.getEntryAdapter().getSbn().getNormalizedUserId();
+        } else {
+            userId = row.getEntryLegacy().getSbn().getNormalizedUserId();
         }
-        int userId = row.getEntryAdapter().getSbn().getNormalizedUserId();
         return mUserManager.isManagedProfile(userId)
                 && mLockscreenUserManager.isLockscreenPublicMode(userId);
     }
