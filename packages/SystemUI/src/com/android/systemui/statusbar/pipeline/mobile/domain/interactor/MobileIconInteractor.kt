@@ -448,10 +448,12 @@ class MobileIconInteractorImpl(
             connectionRepository.imsRegistrationTech,
             connectionRepository.voiceCapable,
             showVowifiIcon,
-        ) { imsRegistrationTech, voiceCapable, showVowifiIcon ->
+            isVoWifiForceHidden,
+        ) { imsRegistrationTech, voiceCapable, showVowifiIcon, isVoWifiForceHidden ->
             voiceCapable
                     && imsRegistrationTech == REGISTRATION_TECH_IWLAN
                     && showVowifiIcon
+                    && !isVoWifiForceHidden
         }
             .stateIn(scope, SharingStarted.WhileSubscribed(), false)
 
