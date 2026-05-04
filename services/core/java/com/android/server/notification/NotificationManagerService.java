@@ -4329,6 +4329,9 @@ public class NotificationManagerService extends SystemService {
          */
         @Override
         public boolean areNotificationsEnabledForPackage(String pkg, int uid) {
+            if (Process.isSdkSandboxUid(uid)) {
+                return false;
+            }
             enforceSystemOrSystemUIOrSamePackage(pkg,
                     "Caller not system or systemui or same package");
             if (UserHandle.getCallingUserId() != UserHandle.getUserId(uid)) {
@@ -4905,8 +4908,8 @@ public class NotificationManagerService extends SystemService {
         public NotificationChannel getConversationNotificationChannel(String callingPkg, int userId,
                 String targetPkg, String channelId, boolean returnParentIfNoConversationChannel,
                 String conversationId) {
-            if (canNotifyAsPackage(callingPkg, targetPkg, userId)
-                    || isCallerSystemOrSystemUiOrShell()) {
+            if (isCallerSystemOrSystemUiOrShell()
+                    || canNotifyAsPackage(callingPkg, targetPkg, userId)) {
                 int targetUid = INVALID_UID;
                 try {
                     targetUid = mPackageManagerClient.getPackageUidAsUser(targetPkg, userId);
@@ -6281,7 +6284,7 @@ public class NotificationManagerService extends SystemService {
                 String wellbeingPackage = getContext().getResources().getString(
                         com.android.internal.R.string.config_systemWellbeing);
                 boolean isCallerWellbeing = !TextUtils.isEmpty(wellbeingPackage)
-                        && mPackageManagerInternal.isSameApp(wellbeingPackage, uid, userId);
+                        && isCallerSameApp(wellbeingPackage, uid, userId);
                 if (!isCallerWellbeing) {
                     throw new IllegalArgumentException(
                             "Only the 'Wellbeing' package can use AutomaticZenRules with "
@@ -6571,7 +6574,7 @@ public class NotificationManagerService extends SystemService {
                     ? mEffectsSuppressors.get(0)
                     : null;
             if (isCallerSystemOrSystemUiOrShell() || suppressor == null
-                    || mPackageManagerInternal.isSameApp(suppressor.getPackageName(),
+                    || isCallerSameApp(suppressor.getPackageName(),
                     Binder.getCallingUid(), UserHandle.getUserId(Binder.getCallingUid()))) {
                 return suppressor;
             }
@@ -6689,8 +6692,11 @@ public class NotificationManagerService extends SystemService {
             try {
                 if (mAllowedManagedServicePackages.test(
                         pkg, userId, mConditionProviders.getRequiredPermission())) {
-                    mConditionProviders.setPackageOrComponentEnabled(
-                            pkg, userId, true, granted);
+                    boolean changed = mConditionProviders.setPackageOrComponentEnabled(pkg, userId,
+                            /* isPrimary= */ true, granted);
+                    if (!changed) {
+                        return;
+                    }
 
                     getContext().sendBroadcastAsUser(new Intent(
                             ACTION_NOTIFICATION_POLICY_ACCESS_GRANTED_CHANGED)
@@ -6960,10 +6966,15 @@ public class NotificationManagerService extends SystemService {
             try {
                 if (mAllowedManagedServicePackages.test(
                         listener.getPackageName(), userId, mListeners.getRequiredPermission())) {
+                    boolean changed = mListeners.setPackageOrComponentEnabled(
+                            listener.flattenToString(), userId, /* isPrimary= */ true, granted,
+                            userSet);
+                    if (!changed) {
+                        return;
+                    }
+
                     mConditionProviders.setPackageOrComponentEnabled(listener.flattenToString(),
                             userId, false, granted, userSet);
-                    mListeners.setPackageOrComponentEnabled(listener.flattenToString(),
-                            userId, true, granted, userSet);
 
                     getContext().sendBroadcastAsUser(new Intent(
                             ACTION_NOTIFICATION_POLICY_ACCESS_GRANTED_CHANGED)
@@ -9017,7 +9028,7 @@ public class NotificationManagerService extends SystemService {
     int resolveNotificationUid(String callingPkg, String targetPkg, int callingUid, int userId)
             throws NameNotFoundException {
         if (userId == USER_ALL) {
-            userId = USER_SYSTEM;
+            userId = UserHandle.getUserId(callingUid);
         }
         // posted from app A on behalf of app A
         if (isCallerSameApp(targetPkg, callingUid, userId)
@@ -11856,7 +11867,7 @@ public class NotificationManagerService extends SystemService {
         if (uid == Process.ROOT_UID && ROOT_PKG.equals(pkg)) {
             return;
         }
-        if (!mPackageManagerInternal.isSameApp(pkg, uid, userId)) {
+        if (!UserHandle.isSameApp(uid, mPackageManagerInternal.getPackageUid(pkg, 0L, userId))) {
             throw new SecurityException("Package " + pkg + " is not owned by uid " + uid);
         }
     }
@@ -12695,19 +12706,20 @@ public class NotificationManagerService extends SystemService {
         }
 
         @Override
-        protected void setPackageOrComponentEnabled(String pkgOrComponent, int userId,
+        protected boolean setPackageOrComponentEnabled(String pkgOrComponent, int userId,
                 boolean isPrimary, boolean enabled, boolean userSet) {
             // Ensures that only one component is enabled at a time
             if (enabled) {
                 List<ComponentName> allowedComponents = getAllowedComponents(userId);
                 if (!allowedComponents.isEmpty()) {
                     ComponentName currentComponent = CollectionUtils.firstOrNull(allowedComponents);
-                    if (currentComponent.flattenToString().equals(pkgOrComponent)) return;
+                    if (currentComponent.flattenToString().equals(pkgOrComponent)) return false;
                     setNotificationAssistantAccessGrantedForUserInternal(
                             currentComponent, userId, false, userSet);
                 }
             }
-            super.setPackageOrComponentEnabled(pkgOrComponent, userId, isPrimary, enabled, userSet);
+            return super.setPackageOrComponentEnabled(pkgOrComponent, userId, isPrimary, enabled,
+                    userSet);
         }
 
         private boolean isVerboseLogEnabled() {
@@ -13054,9 +13066,14 @@ public class NotificationManagerService extends SystemService {
         }
 
         @Override
-        protected void setPackageOrComponentEnabled(String pkgOrComponent, int userId,
+        protected boolean setPackageOrComponentEnabled(String pkgOrComponent, int userId,
                 boolean isPrimary, boolean enabled, boolean userSet) {
-            super.setPackageOrComponentEnabled(pkgOrComponent, userId, isPrimary, enabled, userSet);
+            boolean changed = super.setPackageOrComponentEnabled(pkgOrComponent, userId, isPrimary,
+                    enabled, userSet);
+            if (!changed) {
+                return false;
+            }
+
             String pkgName = getPackageName(pkgOrComponent);
             if (redactSensitiveNotificationsFromUntrustedListeners()) {
                 int uid = mPackageManagerInternal.getPackageUid(pkgName, 0, userId);
@@ -13076,6 +13093,8 @@ public class NotificationManagerService extends SystemService {
                     new Intent(ACTION_NOTIFICATION_LISTENER_ENABLED_CHANGED)
                             .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY),
                     UserHandle.of(userId), null);
+
+            return true;
         }
 
         @Override

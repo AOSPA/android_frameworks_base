@@ -101,7 +101,8 @@ class AppIdPermissionPolicyPermissionResetTest : BasePermissionPolicyTest() {
         with(appIdPermissionPolicy) {
             when (action) {
                 Action.ON_PACKAGE_UNINSTALLED -> onPackageUninstalled(packageName, appId, userId)
-                Action.RESET_RUNTIME_PERMISSIONS -> resetRuntimePermissions(packageName, userId)
+                Action.RESET_RUNTIME_PERMISSIONS ->
+                    resetRuntimePermissions(packageName, userId, true)
             }
         }
     }

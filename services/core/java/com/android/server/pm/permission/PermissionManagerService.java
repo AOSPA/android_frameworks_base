@@ -831,8 +831,9 @@ public class PermissionManagerService extends IPermissionManager.Stub {
             mPermissionManagerServiceImpl.onStorageVolumeMounted(volumeUuid, fingerprintChanged);
         }
         @Override
-        public void resetRuntimePermissions(@NonNull AndroidPackage pkg, @UserIdInt int userId) {
-            mPermissionManagerServiceImpl.resetRuntimePermissions(pkg, userId);
+        public void resetRuntimePermissions(@NonNull AndroidPackage pkg, @UserIdInt int userId,
+                boolean restorePregrants) {
+            mPermissionManagerServiceImpl.resetRuntimePermissions(pkg, userId, restorePregrants);
         }
 
         @Override
