@@ -240,6 +240,25 @@ public class RemoteInputViewTest extends SysuiTestCase {
     }
 
     @Test
+    public void testEditorInfoDisablesFullscreenIme() throws Exception {
+        NotificationTestHelper helper = new NotificationTestHelper(
+                mContext,
+                mDependency,
+                TestableLooper.get(this));
+        ExpandableNotificationRow row = helper.createRow();
+        RemoteInputView view = RemoteInputView.inflate(mContext, null, row.getEntry(), mController);
+        bindController(view, row.getEntry());
+        EditText editText = view.findViewById(R.id.remote_input_text);
+
+        EditorInfo editorInfo = new EditorInfo();
+        InputConnection inputConnection = editText.onCreateInputConnection(editorInfo);
+
+        assertNotNull(inputConnection);
+        assertThat(editorInfo.imeOptions & EditorInfo.IME_FLAG_NO_EXTRACT_UI).isNotEqualTo(0);
+        assertThat(editorInfo.imeOptions & EditorInfo.IME_FLAG_NO_FULLSCREEN).isNotEqualTo(0);
+    }
+
+    @Test
     public void testNoCrashWithoutVisibilityListener() throws Exception {
         NotificationTestHelper helper = new NotificationTestHelper(
                 mContext,

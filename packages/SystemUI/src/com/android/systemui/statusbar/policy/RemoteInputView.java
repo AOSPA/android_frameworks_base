@@ -1089,6 +1089,8 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
         @Override
         public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
             final InputConnection ic = super.onCreateInputConnection(outAttrs);
+            outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_EXTRACT_UI
+                    | EditorInfo.IME_FLAG_NO_FULLSCREEN;
             Context userContext = null;
             try {
                 userContext = mContext.createPackageContextAsUser(
