@@ -25,11 +25,6 @@ import android.util.Slog;
 
 import com.android.internal.R;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 /**
  * A RichTapVibrationEffect describes a haptic effect to be performed by a {@link Vibrator}.
  *
@@ -47,37 +42,17 @@ public final class RichTapVibrationEffect {
     static final int PARCEL_TOKEN_HAPTIC_PARAMETER = 505;
 
     // Client identification constants
-    private static final int OPPO_CLIENT = 0x0001 << 16;
-    private static final int ONEPLUS_CLIENT = 0x0002 << 16;
-    private static final int MI_CLIENT = 0x0003 << 16;
-    private static final int VIVO_CLIENT = 0x0004 << 16;
-    private static final int HONOR_CLIENT = 0x0005 << 16;
-    private static final int LENOVO_CLIENT = 0x0006 << 16;
-    private static final int ZTE_CLIENT = 0x0007 << 16;
     private static final int AAC_CLIENT = 0x00FF << 16;
 
     // Version constants
     private static final int MAJOR_RICHTAP_VERSION = 0x0020 << 8;
     private static final int MINOR_RICHTAP_VERSION = 0x0010 << 0;
 
-    // Effect strength mapping
-    private static Map<String, Integer> effectStrength = new HashMap<>();
-
-    static {
-        effectStrength.put("LIGHT", VibrationEffect.EFFECT_STRENGTH_LIGHT);
-        effectStrength.put("MEDIUM", VibrationEffect.EFFECT_STRENGTH_MEDIUM);
-        effectStrength.put("STRONG", VibrationEffect.EFFECT_STRENGTH_STRONG);
-    }
-
-    private static String DEFAULT_EXT_PREBAKED_STRENGTH = "STRONG";
-
-    // Support status constants
-    private static final int VIBRATION_EFFECT_SUPPORT_UNKNOWN = 0;
-    private static final int VIBRATION_EFFECT_SUPPORT_YES = 1;
-    private static final int VIBRATION_EFFECT_SUPPORT_NO = 2;
-
     // Effect ID constants
     private static final int EFFECT_ID_START = 0x1000;
+    private static final int INNER_EFFECT_STRENGTH_LIGHT = 150;
+    private static final int INNER_EFFECT_STRENGTH_MEDIUM = 200;
+    private static final int INNER_EFFECT_STRENGTH_STRONG = 250;
 
     // Prevent instantiation
     private RichTapVibrationEffect() {
@@ -144,11 +119,11 @@ public final class RichTapVibrationEffect {
     public static int getInnerEffectStrength(int strength) {
         switch (strength) {
             case VibrationEffect.EFFECT_STRENGTH_LIGHT:
-                return 150;
+                return INNER_EFFECT_STRENGTH_LIGHT;
             case VibrationEffect.EFFECT_STRENGTH_MEDIUM:
-                return 200;
+                return INNER_EFFECT_STRENGTH_MEDIUM;
             case VibrationEffect.EFFECT_STRENGTH_STRONG:
-                return 250;
+                return INNER_EFFECT_STRENGTH_STRONG;
             default:
                 Slog.e(TAG, "Invalid effect strength: " + strength);
                 return 0;
