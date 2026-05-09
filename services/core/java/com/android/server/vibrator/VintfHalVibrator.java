@@ -57,6 +57,8 @@ import java.util.function.Consumer;
 /** Implementations for {@link HalVibrator} backed by VINTF objects. */
 class VintfHalVibrator {
     private static final String TAG = "VintfHalVibrator";
+    // RichTap perform returns a command id, so use a short positive duration for framework state.
+    private static final int RICHTAP_PREBAKED_DURATION_MS = 30;
 
     /** {@link VintfSupplier} for {@link IVibrator} service managed by {@link IVibratorManager}. */
     static final class ManagedVibratorSupplier extends VintfSupplier<IVibrator> {
@@ -294,16 +296,19 @@ class VintfHalVibrator {
             Trace.traceBegin(TRACE_TAG_VIBRATOR, "HalVibrator.setAmplitude");
             try {
                 synchronized (mLock) {
+                    boolean result = false;
                     if (mRichTapService != null) {
                         int strength = (int) (255.0f * amplitude);
-                        mRichTapService.richTapVibratorSetAmplitude(strength);
+                        result = mRichTapService.richTapVibratorSetAmplitude(strength);
                     }
-                    if (!mVibratorInfo.hasCapability(IVibrator.CAP_AMPLITUDE_CONTROL)) {
-                        return false;
+                    if (!result) {
+                        if (!mVibratorInfo.hasCapability(IVibrator.CAP_AMPLITUDE_CONTROL)) {
+                            return false;
+                        }
+                        result = VintfUtils.runNoThrow(mHalSupplier,
+                                    hal -> hal.setAmplitude(amplitude),
+                                    e -> logError("Error setting amplitude to " + amplitude, e));
                     }
-                    boolean result = VintfUtils.runNoThrow(mHalSupplier,
-                                hal -> hal.setAmplitude(amplitude),
-                                e -> logError("Error setting amplitude to " + amplitude, e));
                     if (result && mCurrentState == State.VIBRATING) {
                         mCurrentAmplitude = amplitude;
                     }
@@ -320,8 +325,7 @@ class VintfHalVibrator {
             try {
                 synchronized (mLock) {
                     int result;
-                    if (mRichTapService != null) {
-                        mRichTapService.richTapVibratorOn(milliseconds);
+                    if (mRichTapService != null && mRichTapService.richTapVibratorOn(milliseconds)) {
                         result = (int) milliseconds;
                     } else if (mVibratorInfo.hasCapability(IVibrator.CAP_ON_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
@@ -387,15 +391,17 @@ class VintfHalVibrator {
                     boolean useRichTap = mRichTapService != null
                             && RichTapVibrationEffect.isInnerEffectSupported(
                                     prebaked.getEffectId());
-                    int strength = useRichTap
+                    int richTapStrength = useRichTap
                             ? RichTapVibrationEffect.getInnerEffectStrength(
                                     prebaked.getEffectStrength())
                             : 0;
-                    if (strength > 0) {
-                        result = 30;
+                    if (richTapStrength > 0) {
                         int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
                                 prebaked.getEffectId());
-                        mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
+                        if (mRichTapService.richTapVibratorPerform(richTapEffectId,
+                                (byte) richTapStrength)) {
+                            result = RICHTAP_PREBAKED_DURATION_MS;
+                        }
                     }
                     if (result <= 0 && mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
                         // Delegate vibrate with callback to native, to avoid creating a new
