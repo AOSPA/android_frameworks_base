@@ -41,11 +41,20 @@ import vendor.aac.hardware.richtap.vibrator.IRichtapVibrator;
  */
 public class RichTapVibratorService {
     public static final String ACTION_CHANGE_MODE = "richtap_change_mode";
+    public static final String EXTRA_MODE = "mode";
     private static final String TAG = RichTapVibratorService.class.getSimpleName();
     private static final String VIBRATOR_DESCRIPTOR = IVibrator.DESCRIPTOR + "/default";
     private static final boolean DEBUG = false;
     private final IRichtapCallback mCallback;
-    private volatile IRichtapVibrator sRichtapVibratorService = null;
+    private volatile IRichtapVibrator mRichTapVibratorService = null;
+
+    private interface RichTapOperation {
+        void execute(@NonNull IRichtapVibrator service) throws Exception;
+    }
+
+    private interface RichTapIntOperation {
+        int execute(@NonNull IRichtapVibrator service) throws Exception;
+    }
 
     public RichTapVibratorService() {
         this(null);
@@ -56,8 +65,8 @@ public class RichTapVibratorService {
     }
 
     @Nullable
-    private synchronized IRichtapVibrator getRichtapService() {
-        if (sRichtapVibratorService == null) {
+    private synchronized IRichtapVibrator getRichTapService() {
+        if (mRichTapVibratorService == null) {
             if (DEBUG) Slog.d(TAG, "vibratorDescriptor: " + VIBRATOR_DESCRIPTOR);
 
             IVibrator vibratorHalService = IVibrator.Stub.asInterface(
@@ -79,9 +88,9 @@ public class RichTapVibratorService {
             try {
                 IBinder binder = vibratorHalService.asBinder().getExtension();
                 if (binder != null) {
-                    sRichtapVibratorService = IRichtapVibrator.Stub.asInterface(
+                    mRichTapVibratorService = IRichtapVibrator.Stub.asInterface(
                             Binder.allowBlocking(binder));
-                    binder.linkToDeath(new VibHalDeathRecipient(this), 0);
+                    binder.linkToDeath(new RichTapHalDeathRecipient(this), 0);
                 } else {
                     Slog.e(TAG, "Extension binder is null");
                 }
@@ -89,7 +98,30 @@ public class RichTapVibratorService {
                 Slog.e(TAG, "Failed to get extension", e);
             }
         }
-        return sRichtapVibratorService;
+        return mRichTapVibratorService;
+    }
+
+    private void runOnRichTapService(String errorMessage, RichTapOperation operation) {
+        try {
+            IRichtapVibrator service = getRichTapService();
+            if (service != null) {
+                operation.execute(service);
+            }
+        } catch (Exception e) {
+            Slog.e(TAG, errorMessage, e);
+        }
+    }
+
+    private int callRichTapService(String errorMessage, RichTapIntOperation operation) {
+        try {
+            IRichtapVibrator service = getRichTapService();
+            if (service != null) {
+                return operation.execute(service);
+            }
+        } catch (Exception e) {
+            Slog.e(TAG, errorMessage, e);
+        }
+        return 0;
     }
 
     /**
@@ -98,15 +130,10 @@ public class RichTapVibratorService {
      * @param millis The duration in milliseconds
      */
     public void richTapVibratorOn(long millis) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing vibratorOn");
-                service.on((int) millis, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute vibratorOn", e);
-        }
+        runOnRichTapService("Failed to execute vibratorOn", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing vibratorOn");
+            service.on((int) millis, mCallback);
+        });
     }
 
     /**
@@ -115,15 +142,10 @@ public class RichTapVibratorService {
      * @param amplitude The amplitude value
      */
     public void richTapVibratorSetAmplitude(int amplitude) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Setting amplitude: " + amplitude);
-                service.setAmplitude(amplitude, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to set amplitude", e);
-        }
+        runOnRichTapService("Failed to set amplitude", service -> {
+            if (DEBUG) Slog.d(TAG, "Setting amplitude: " + amplitude);
+            service.setAmplitude(amplitude, mCallback);
+        });
     }
 
     /**
@@ -134,16 +156,11 @@ public class RichTapVibratorService {
      * @param freq      The frequency value
      */
     public void richTapVibratorOnRawPattern(@NonNull int[] pattern, int amplitude, int freq) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing raw pattern with amplitude: " +
-                        amplitude + ", freq: " + freq);
-                service.performHe(1, 0, amplitude, freq, pattern, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute raw pattern", e);
-        }
+        runOnRichTapService("Failed to execute raw pattern", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing raw pattern with amplitude: " +
+                    amplitude + ", freq: " + freq);
+            service.performHe(1, 0, amplitude, freq, pattern, mCallback);
+        });
     }
 
     /**
@@ -159,15 +176,10 @@ public class RichTapVibratorService {
         int amplitude = patternHe.getAmplitude();
         int freq = patternHe.getFreq();
 
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing pattern HE effect");
-                service.performHe(looper, interval, amplitude, freq, pattern, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute pattern HE effect", e);
-        }
+        runOnRichTapService("Failed to execute pattern HE effect", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing pattern HE effect");
+            service.performHe(looper, interval, amplitude, freq, pattern, mCallback);
+        });
     }
 
     /**
@@ -194,30 +206,20 @@ public class RichTapVibratorService {
 
         richTapVibratorSetAmplitude(amplitude);
 
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing envelope effect");
-                service.performEnvelope(params, steepMode, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute envelope effect", e);
-        }
+        runOnRichTapService("Failed to execute envelope effect", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing envelope effect");
+            service.performEnvelope(params, steepMode, mCallback);
+        });
     }
 
     /**
      * Stops all vibrations.
      */
     public void richTapVibratorStop() {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Stopping vibrator");
-                service.stop(mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to stop vibrator", e);
-        }
+        runOnRichTapService("Failed to stop vibrator", service -> {
+            if (DEBUG) Slog.d(TAG, "Stopping vibrator");
+            service.stop(mCallback);
+        });
     }
 
     /**
@@ -227,15 +229,10 @@ public class RichTapVibratorService {
      * @param length The length of the data
      */
     private void setHapticParam(int[] data, int length) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Setting haptic parameters, length: " + length);
-                service.setHapticParam(data, length, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to set haptic parameters", e);
-        }
+        runOnRichTapService("Failed to set haptic parameters", service -> {
+            if (DEBUG) Slog.d(TAG, "Setting haptic parameters, length: " + length);
+            service.setHapticParam(data, length, mCallback);
+        });
     }
 
     /**
@@ -261,21 +258,15 @@ public class RichTapVibratorService {
      *
      * @param id    The effect ID
      * @param scale The scale value
-     * @return The timeout duration
+     * @return The command id returned by the HAL
      */
     public int richTapVibratorPerform(int id, byte scale) {
-        int timeout = 0;
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Performing predefined effect");
-                timeout = service.perform(id, scale, mCallback);
-                if (DEBUG) Slog.d(TAG, "Effect timeout: " + timeout);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to perform effect", e);
-        }
-        return timeout;
+        return callRichTapService("Failed to perform effect", service -> {
+            if (DEBUG) Slog.d(TAG, "Performing predefined effect");
+            int cmdId = service.perform(id, scale, mCallback);
+            if (DEBUG) Slog.d(TAG, "Effect command id: " + cmdId);
+            return cmdId;
+        });
     }
 
     /**
@@ -284,7 +275,7 @@ public class RichTapVibratorService {
      * @param combEffect The combined vibration effect
      * @return true if the effect was processed, false otherwise
      */
-    public boolean disposeRichtapEffectParams(CombinedVibration combEffect) {
+    public boolean playRichTapParameterEffect(CombinedVibration combEffect) {
         if (!(combEffect instanceof CombinedVibration.Mono)) {
             return false;
         }
@@ -301,14 +292,8 @@ public class RichTapVibratorService {
                         ", amplitude: " + amplitude + ", freq: " + freq);
             }
 
-            try {
-                IRichtapVibrator service = getRichtapService();
-                if (service != null) {
-                    service.performHeParam(interval, amplitude, freq, mCallback);
-                }
-            } catch (Exception e) {
-                Slog.e(TAG, "Failed to process PatternHeParameter", e);
-            }
+            runOnRichTapService("Failed to process PatternHeParameter", service ->
+                    service.performHeParam(interval, amplitude, freq, mCallback));
             return true;
         } else if (effect instanceof HapticParameter parameter) {
             int[] param = parameter.getParam();
@@ -350,7 +335,7 @@ public class RichTapVibratorService {
      */
     void resetHalServiceProxy() {
         synchronized (this) {
-            sRichtapVibratorService = null;
+            mRichTapVibratorService = null;
         }
     }
 
@@ -374,11 +359,11 @@ public class RichTapVibratorService {
     /**
      * Death recipient for vibrator HAL service.
      */
-    private static final class VibHalDeathRecipient implements IBinder.DeathRecipient {
+    private static final class RichTapHalDeathRecipient implements IBinder.DeathRecipient {
         private final RichTapVibratorService mRichTapService;
 
-        VibHalDeathRecipient(@NonNull RichTapVibratorService richtapService) {
-            mRichTapService = richtapService;
+        RichTapHalDeathRecipient(@NonNull RichTapVibratorService richTapService) {
+            mRichTapService = richTapService;
         }
 
         @Override
