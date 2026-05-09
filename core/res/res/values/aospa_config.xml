@@ -19,6 +19,9 @@
     <!-- Whether to use Richtap vibration -->
     <bool name="config_usesRichtapVibration">false</bool>
 
+    <!-- Whether Richtap should load tuned HE files for standard Android prebaked effects. -->
+    <bool name="config_usesRichtapPrebakedHeResources">false</bool>
+
     <!-- Whether device has an alert slider. -->
     <bool name="config_hasAlertSlider">false</bool>
 
