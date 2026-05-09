@@ -44,6 +44,8 @@ import libcore.util.NativeAllocationRegistry;
 /** Controls a single vibrator. */
 final class VibratorController {
     private static final String TAG = "VibratorController";
+    // RichTap perform returns a command id, so use a short positive duration for framework state.
+    private static final long RICHTAP_PREBAKED_DURATION_MS = 30;
 
     private final Object mLock = new Object();
 
@@ -363,19 +365,16 @@ final class VibratorController {
         try {
             synchronized (mLock) {
                 long duration = 0;
-                if (mRichTapService != null && RichTapVibrationEffect.isInnerEffectSupported(
-                        prebaked.getEffectId())) {
-                    int strength = RichTapVibrationEffect.getInnerEffectStrength(
-                            prebaked.getEffectStrength());
-                    if (strength > 0) {
-                        duration = 30;
-                        int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
-                                prebaked.getEffectId());
-                        mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
-                    } else {
-                        duration = mNativeWrapper.perform(prebaked.getEffectId(),
-                            prebaked.getEffectStrength(), vibrationId, stepId);
-                    }
+                boolean useRichTap = mRichTapService != null
+                        && RichTapVibrationEffect.isInnerEffectSupported(prebaked.getEffectId());
+                int strength = useRichTap
+                        ? RichTapVibrationEffect.getInnerEffectStrength(prebaked.getEffectStrength())
+                        : 0;
+                if (strength > 0) {
+                    duration = RICHTAP_PREBAKED_DURATION_MS;
+                    int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
+                            prebaked.getEffectId());
+                    mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
                 } else {
                     duration = mNativeWrapper.perform(prebaked.getEffectId(),
                             prebaked.getEffectStrength(), vibrationId, stepId);
