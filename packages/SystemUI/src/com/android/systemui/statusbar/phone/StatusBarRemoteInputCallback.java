@@ -233,9 +233,9 @@ public class StatusBarRemoteInputCallback implements Callback, Callbacks,
                     if (expandNotification) {
                         // notification isn't expanded, let's make sure it's expanded!
                         row.toggleExpansionState();
-                        row.getPrivateLayout().setOnExpandedVisibleListener(runnable);
                     }
                 }
+                row.getPrivateLayout().setOnExpandedVisibleListener(runnable);
             } else {
                 if (row.isChildInGroup() && !row.areChildrenExpanded()) {
                     // The group isn't expanded, let's make sure it's visible!
