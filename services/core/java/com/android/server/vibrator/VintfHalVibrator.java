@@ -59,6 +59,7 @@ class VintfHalVibrator {
     private static final String TAG = "VintfHalVibrator";
     // RichTap perform returns a command id, so use a short positive duration for framework state.
     private static final int RICHTAP_PREBAKED_DURATION_MS = 30;
+    private static final int RICHTAP_PREBAKED_HE_AMPLITUDE = 0xff;
 
     /** {@link VintfSupplier} for {@link IVibrator} service managed by {@link IVibratorManager}. */
     static final class ManagedVibratorSupplier extends VintfSupplier<IVibrator> {
@@ -391,16 +392,24 @@ class VintfHalVibrator {
                     boolean useRichTap = mRichTapService != null
                             && RichTapVibrationEffect.isInnerEffectSupported(
                                     prebaked.getEffectId());
-                    int richTapStrength = useRichTap
-                            ? RichTapVibrationEffect.getInnerEffectStrength(
-                                    prebaked.getEffectStrength())
-                            : 0;
-                    if (richTapStrength > 0) {
-                        int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
-                                prebaked.getEffectId());
-                        if (mRichTapService.richTapVibratorPerform(richTapEffectId,
-                                (byte) richTapStrength)) {
-                            result = RICHTAP_PREBAKED_DURATION_MS;
+                    int[] pattern = useRichTap ? RichTapVibrationEffect.getPrebakedHeEffect(
+                            prebaked.getEffectId(), prebaked.getEffectStrength()) : null;
+                    if (pattern != null && mRichTapService.richTapVibratorOnRawPattern(pattern,
+                            RICHTAP_PREBAKED_HE_AMPLITUDE, 0)) {
+                        result = RICHTAP_PREBAKED_DURATION_MS;
+                    }
+                    if (result <= 0) {
+                        int strength = useRichTap
+                                ? RichTapVibrationEffect.getInnerEffectStrength(
+                                        prebaked.getEffectStrength())
+                                : 0;
+                        if (strength > 0) {
+                            int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
+                                    prebaked.getEffectId());
+                            if (mRichTapService.richTapVibratorPerform(richTapEffectId,
+                                    (byte) strength)) {
+                                result = RICHTAP_PREBAKED_DURATION_MS;
+                            }
                         }
                     }
                     if (result <= 0 && mVibratorInfo.hasCapability(IVibrator.CAP_PERFORM_CALLBACK)) {
