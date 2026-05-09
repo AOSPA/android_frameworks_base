@@ -36,16 +36,20 @@ import java.util.Locale;
 import vendor.aac.hardware.richtap.vibrator.IRichtapCallback;
 import vendor.aac.hardware.richtap.vibrator.IRichtapVibrator;
 
-/**
- * Service class managing RichTap vibrator functionality.
- */
+/** Service class managing RichTap vibrator functionality. */
 public class RichTapVibratorService {
     public static final String ACTION_CHANGE_MODE = "richtap_change_mode";
+    public static final String EXTRA_MODE = "mode";
     private static final String TAG = RichTapVibratorService.class.getSimpleName();
     private static final String VIBRATOR_DESCRIPTOR = IVibrator.DESCRIPTOR + "/default";
     private static final boolean DEBUG = false;
+
     private final IRichtapCallback mCallback;
-    private volatile IRichtapVibrator sRichtapVibratorService = null;
+    private volatile IRichtapVibrator mRichTapVibratorService = null;
+
+    private interface RichTapOperation {
+        void execute(@NonNull IRichtapVibrator service) throws Exception;
+    }
 
     public RichTapVibratorService() {
         this(null);
@@ -56,8 +60,8 @@ public class RichTapVibratorService {
     }
 
     @Nullable
-    private synchronized IRichtapVibrator getRichtapService() {
-        if (sRichtapVibratorService == null) {
+    private synchronized IRichtapVibrator getRichTapService() {
+        if (mRichTapVibratorService == null) {
             if (DEBUG) Slog.d(TAG, "vibratorDescriptor: " + VIBRATOR_DESCRIPTOR);
 
             IVibrator vibratorHalService = IVibrator.Stub.asInterface(
@@ -79,9 +83,9 @@ public class RichTapVibratorService {
             try {
                 IBinder binder = vibratorHalService.asBinder().getExtension();
                 if (binder != null) {
-                    sRichtapVibratorService = IRichtapVibrator.Stub.asInterface(
+                    mRichTapVibratorService = IRichtapVibrator.Stub.asInterface(
                             Binder.allowBlocking(binder));
-                    binder.linkToDeath(new VibHalDeathRecipient(this), 0);
+                    binder.linkToDeath(new RichTapHalDeathRecipient(this), 0);
                 } else {
                     Slog.e(TAG, "Extension binder is null");
                 }
@@ -89,69 +93,49 @@ public class RichTapVibratorService {
                 Slog.e(TAG, "Failed to get extension", e);
             }
         }
-        return sRichtapVibratorService;
+        return mRichTapVibratorService;
     }
 
-    /**
-     * Starts the vibrator for specified duration.
-     *
-     * @param millis The duration in milliseconds
-     */
-    public void richTapVibratorOn(long millis) {
+    private boolean runOnRichTapService(String errorMessage, RichTapOperation operation) {
         try {
-            IRichtapVibrator service = getRichtapService();
+            IRichtapVibrator service = getRichTapService();
             if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing vibratorOn");
-                service.on((int) millis, mCallback);
+                operation.execute(service);
+                return true;
             }
         } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute vibratorOn", e);
+            Slog.e(TAG, errorMessage, e);
         }
+        return false;
     }
 
-    /**
-     * Sets the vibration amplitude.
-     *
-     * @param amplitude The amplitude value
-     */
-    public void richTapVibratorSetAmplitude(int amplitude) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Setting amplitude: " + amplitude);
-                service.setAmplitude(amplitude, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to set amplitude", e);
-        }
+    /** Starts the vibrator for specified duration. */
+    public boolean richTapVibratorOn(long millis) {
+        return runOnRichTapService("Failed to execute vibratorOn", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing vibratorOn");
+            service.on((int) millis, mCallback);
+        });
     }
 
-    /**
-     * Executes a raw pattern HE effect.
-     *
-     * @param pattern   The pattern array
-     * @param amplitude The amplitude value
-     * @param freq      The frequency value
-     */
-    public void richTapVibratorOnRawPattern(@NonNull int[] pattern, int amplitude, int freq) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing raw pattern with amplitude: " +
-                        amplitude + ", freq: " + freq);
-                service.performHe(1, 0, amplitude, freq, pattern, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute raw pattern", e);
-        }
+    /** Sets the vibration amplitude. */
+    public boolean richTapVibratorSetAmplitude(int amplitude) {
+        return runOnRichTapService("Failed to set amplitude", service -> {
+            if (DEBUG) Slog.d(TAG, "Setting amplitude: " + amplitude);
+            service.setAmplitude(amplitude, mCallback);
+        });
     }
 
-    /**
-     * Executes a pattern HE effect.
-     *
-     * @param effect The PatternHe vibration effect
-     */
-    public void richTapVibratorOnPatternHe(VibrationEffect effect) {
+    /** Executes a raw pattern HE effect. */
+    public boolean richTapVibratorOnRawPattern(@NonNull int[] pattern, int amplitude, int freq) {
+        return runOnRichTapService("Failed to execute raw pattern", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing raw pattern with amplitude: "
+                    + amplitude + ", freq: " + freq);
+            service.performHe(1, 0, amplitude, freq, pattern, mCallback);
+        });
+    }
+
+    /** Executes a pattern HE effect. */
+    public boolean richTapVibratorOnPatternHe(VibrationEffect effect) {
         PatternHe patternHe = (PatternHe) effect;
         int[] pattern = patternHe.getPatternInfo();
         int looper = patternHe.getLooper();
@@ -159,27 +143,14 @@ public class RichTapVibratorService {
         int amplitude = patternHe.getAmplitude();
         int freq = patternHe.getFreq();
 
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing pattern HE effect");
-                service.performHe(looper, interval, amplitude, freq, pattern, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute pattern HE effect", e);
-        }
+        return runOnRichTapService("Failed to execute pattern HE effect", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing pattern HE effect");
+            service.performHe(looper, interval, amplitude, freq, pattern, mCallback);
+        });
     }
 
-    /**
-     * Executes an envelope vibration effect.
-     *
-     * @param relativeTime The relative time array
-     * @param scaleArr     The scale array
-     * @param freqArr      The frequency array
-     * @param steepMode    Whether steep mode is enabled
-     * @param amplitude    The amplitude value
-     */
-    public void richTapVibratorOnEnvelope(int[] relativeTime, int[] scaleArr, int[] freqArr,
+    /** Executes an envelope vibration effect. */
+    public boolean richTapVibratorOnEnvelope(int[] relativeTime, int[] scaleArr, int[] freqArr,
             boolean steepMode, int amplitude) {
         int[] params = new int[12];
         for (int i = 0; i < relativeTime.length; i++) {
@@ -192,99 +163,55 @@ public class RichTapVibratorService {
             }
         }
 
-        richTapVibratorSetAmplitude(amplitude);
-
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Executing envelope effect");
-                service.performEnvelope(params, steepMode, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to execute envelope effect", e);
+        if (!richTapVibratorSetAmplitude(amplitude)) {
+            return false;
         }
+
+        return runOnRichTapService("Failed to execute envelope effect", service -> {
+            if (DEBUG) Slog.d(TAG, "Executing envelope effect");
+            service.performEnvelope(params, steepMode, mCallback);
+        });
     }
 
-    /**
-     * Stops all vibrations.
-     */
-    public void richTapVibratorStop() {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Stopping vibrator");
-                service.stop(mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to stop vibrator", e);
-        }
+    /** Stops all vibrations. */
+    public boolean richTapVibratorStop() {
+        return runOnRichTapService("Failed to stop vibrator", service -> {
+            if (DEBUG) Slog.d(TAG, "Stopping vibrator");
+            service.stop(mCallback);
+        });
     }
 
-    /**
-     * Sets haptic parameters.
-     *
-     * @param data   The parameter data
-     * @param length The length of the data
-     */
-    private void setHapticParam(int[] data, int length) {
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Setting haptic parameters, length: " + length);
-                service.setHapticParam(data, length, mCallback);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to set haptic parameters", e);
-        }
+    /** Sets haptic parameters. */
+    private boolean setHapticParam(int[] data, int length) {
+        return runOnRichTapService("Failed to set haptic parameters", service -> {
+            if (DEBUG) Slog.d(TAG, "Setting haptic parameters, length: " + length);
+            service.setHapticParam(data, length, mCallback);
+        });
     }
 
-    /**
-     * Sets the vibration mode.
-     *
-     * @param mode The vibration mode
-     */
-    public void richTapSetVibrationMode(int mode) {
+    /** Sets the vibration mode. */
+    public boolean richTapSetVibrationMode(int mode) {
         if (DEBUG) Slog.i(TAG, "Setting vibration mode: " + mode);
-
-        // Stop all vibrations first
         richTapVibratorStop();
 
         int[] param = new int[]{
                 HapticParamType.HAPTIC_DRC.getValue(),
                 mode
         };
-        setHapticParam(param, param.length);
+        return setHapticParam(param, param.length);
     }
 
-    /**
-     * Performs a predefined effect with the specified ID and scale.
-     *
-     * @param id    The effect ID
-     * @param scale The scale value
-     * @return The timeout duration
-     */
-    public int richTapVibratorPerform(int id, byte scale) {
-        int timeout = 0;
-        try {
-            IRichtapVibrator service = getRichtapService();
-            if (service != null) {
-                if (DEBUG) Slog.d(TAG, "Performing predefined effect");
-                timeout = service.perform(id, scale, mCallback);
-                if (DEBUG) Slog.d(TAG, "Effect timeout: " + timeout);
-            }
-        } catch (Exception e) {
-            Slog.e(TAG, "Failed to perform effect", e);
-        }
-        return timeout;
+    /** Performs a predefined effect with the specified ID and scale. */
+    public boolean richTapVibratorPerform(int id, byte scale) {
+        return runOnRichTapService("Failed to perform effect", service -> {
+            if (DEBUG) Slog.d(TAG, "Performing predefined effect");
+            int cmdId = service.perform(id, scale, mCallback);
+            if (DEBUG) Slog.d(TAG, "Effect command id: " + cmdId);
+        });
     }
 
-    /**
-     * Processes RichTap effect parameters.
-     *
-     * @param combEffect The combined vibration effect
-     * @return true if the effect was processed, false otherwise
-     */
-    public boolean disposeRichtapEffectParams(CombinedVibration combEffect) {
+    /** Processes RichTap effect parameters. */
+    public boolean playRichTapParameterEffect(CombinedVibration combEffect) {
         if (!(combEffect instanceof CombinedVibration.Mono)) {
             return false;
         }
@@ -297,19 +224,12 @@ public class RichTapVibratorService {
             int freq = param.getFreq();
 
             if (DEBUG) {
-                Slog.d(TAG, "Processing PatternHeParameter - interval: " + interval +
-                        ", amplitude: " + amplitude + ", freq: " + freq);
+                Slog.d(TAG, "Processing PatternHeParameter - interval: " + interval
+                        + ", amplitude: " + amplitude + ", freq: " + freq);
             }
 
-            try {
-                IRichtapVibrator service = getRichtapService();
-                if (service != null) {
-                    service.performHeParam(interval, amplitude, freq, mCallback);
-                }
-            } catch (Exception e) {
-                Slog.e(TAG, "Failed to process PatternHeParameter", e);
-            }
-            return true;
+            return runOnRichTapService("Failed to process PatternHeParameter", service ->
+                    service.performHeParam(interval, amplitude, freq, mCallback));
         } else if (effect instanceof HapticParameter parameter) {
             int[] param = parameter.getParam();
             int length = parameter.getLength();
@@ -318,21 +238,14 @@ public class RichTapVibratorService {
                 Slog.d(TAG, "Processing HapticParameter: " + parameter);
             }
 
-            setHapticParam(param, length);
-            return true;
+            return setHapticParam(param, length);
         }
 
         if (DEBUG) Slog.d(TAG, "Not a RichTap effect, no action taken");
         return false;
     }
 
-    /**
-     * Checks if the vibration effect is a RichTap effect.
-     *
-     * @param effect The vibration effect
-     * @param reason The vibration reason
-     * @return true if it's a RichTap effect, false otherwise
-     */
+    /** Checks if the vibration effect is a RichTap effect. */
     public boolean checkIfRichTapEffect(VibrationEffect effect, String reason) {
         if (reason != null && reason.equals(HapticPlayer.VIBRATE_REASON)) {
             return false;
@@ -345,18 +258,14 @@ public class RichTapVibratorService {
                 || effect instanceof ExtPrebaked);
     }
 
-    /**
-     * Resets the HAL service proxy.
-     */
+    /** Resets the HAL service proxy. */
     void resetHalServiceProxy() {
         synchronized (this) {
-            sRichtapVibratorService = null;
+            mRichTapVibratorService = null;
         }
     }
 
-    /**
-     * Haptic parameter types enum.
-     */
+    /** Haptic parameter types enum. */
     public enum HapticParamType {
         HAPTIC_DRC(0x01);
 
@@ -371,14 +280,12 @@ public class RichTapVibratorService {
         }
     }
 
-    /**
-     * Death recipient for vibrator HAL service.
-     */
-    private static final class VibHalDeathRecipient implements IBinder.DeathRecipient {
+    /** Death recipient for vibrator HAL service. */
+    private static final class RichTapHalDeathRecipient implements IBinder.DeathRecipient {
         private final RichTapVibratorService mRichTapService;
 
-        VibHalDeathRecipient(@NonNull RichTapVibratorService richtapService) {
-            mRichTapService = richtapService;
+        RichTapHalDeathRecipient(@NonNull RichTapVibratorService richTapService) {
+            mRichTapService = richTapService;
         }
 
         @Override
