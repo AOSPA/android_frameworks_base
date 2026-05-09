@@ -26,7 +26,6 @@ package com.android.systemui.statusbar.pipeline.mobile.ui.viewmodel
 // QTI_BEGIN: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
 
 import android.telephony.TelephonyManager
-import com.android.settingslib.mobile.TelephonyIcons
 // QTI_END: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
 import com.android.systemui.Flags.statusBarStaticInoutIndicators
 import com.android.systemui.common.shared.model.ContentDescription
@@ -200,13 +199,8 @@ private class CellularIconViewModel(
                     airplaneModeInteractor.isAirplaneMode,
                     iconInteractor.isAllowedDuringAirplaneMode,
                     iconInteractor.isForceHidden,
-// QTI_BEGIN: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
-                    iconInteractor.voWifiAvailable,
-                ) { isAirplaneMode, isAllowedDuringAirplaneMode, isForceHidden, voWifiAvailable ->
-                    if (voWifiAvailable) {
-                        true
-                    } else if (isForceHidden) {
-// QTI_END: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
+                ) { isAirplaneMode, isAllowedDuringAirplaneMode, isForceHidden ->
+                    if (isForceHidden) {
                         false
                     } else if (isAirplaneMode) {
                         isAllowedDuringAirplaneMode
@@ -281,10 +275,8 @@ private class CellularIconViewModel(
                 iconInteractor.networkTypeIconGroup,
                 showNetworkTypeIcon,
                 iconInteractor.networkTypeIconCustomization,
-                iconInteractor.voWifiAvailable,
                 iconInteractor.isInService,
-            ) { networkTypeIconGroup, shouldShow, networkTypeIconCustomization, voWifiAvailable,
-                isInService ->
+            ) { networkTypeIconGroup, shouldShow, networkTypeIconCustomization, isInService ->
 // QTI_END: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
                 val desc =
                     if (networkTypeIconGroup.contentDescription != 0)
@@ -294,17 +286,12 @@ private class CellularIconViewModel(
                 val icon =
 // QTI_END: 2023-04-01: Android_UI: SystemUI: Readapt VoWifi icon
 // QTI_BEGIN: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
-                    if (voWifiAvailable) {
-                        Icon.Resource(TelephonyIcons.VOWIFI.dataType, desc)
-                    } else {
-                        if (networkTypeIconGroup.iconId != 0)
-                            Icon.Resource(networkTypeIconGroup.iconId, desc)
-                        else null
-                    }
+                    if (networkTypeIconGroup.iconId != 0)
+                        Icon.Resource(networkTypeIconGroup.iconId, desc)
+                    else null
 // QTI_END: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
                 return@combine when {
 // QTI_BEGIN: 2025-04-15: Android_UI: SystemUI: Readapt Mobile Icon Features For Kairos part 1
-                    voWifiAvailable -> icon
                     networkTypeIconCustomization.isRatCustomization -> {
                         if (shouldShowNetworkTypeIcon(networkTypeIconCustomization)
                             && isInService) {
