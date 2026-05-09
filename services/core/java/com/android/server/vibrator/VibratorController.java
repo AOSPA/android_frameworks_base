@@ -45,6 +45,9 @@ import libcore.util.NativeAllocationRegistry;
 // TODO(b/409002423): remove this class once remove_hidl_support flag removed
 final class VibratorController implements HalVibrator {
     private static final String TAG = "VibratorController";
+    // RichTap perform returns a command id, so use a short positive duration for framework state.
+    private static final long RICHTAP_PREBAKED_DURATION_MS = 30;
+    private static final int RICHTAP_PREBAKED_HE_AMPLITUDE = 0xff;
 
     private final Object mLock = new Object();
 
@@ -293,22 +296,30 @@ final class VibratorController implements HalVibrator {
         try {
             synchronized (mLock) {
                 long duration = 0;
-                if (mRichTapService != null && RichTapVibrationEffect.isInnerEffectSupported(
-                        prebaked.getEffectId())) {
-                    int strength = RichTapVibrationEffect.getInnerEffectStrength(
-                            prebaked.getEffectStrength());
+                boolean useRichTap = mRichTapService != null
+                        && RichTapVibrationEffect.isInnerEffectSupported(prebaked.getEffectId());
+                int[] pattern = useRichTap ? RichTapVibrationEffect.getPrebakedHeEffect(
+                        prebaked.getEffectId(), prebaked.getEffectStrength()) : null;
+                if (pattern != null) {
+                    duration = RICHTAP_PREBAKED_DURATION_MS;
+                    mRichTapService.richTapVibratorOnRawPattern(pattern,
+                            RICHTAP_PREBAKED_HE_AMPLITUDE, 0);
+                }
+                if (duration <= 0) {
+                    int strength = useRichTap
+                            ? RichTapVibrationEffect.getInnerEffectStrength(
+                                    prebaked.getEffectStrength())
+                            : 0;
                     if (strength > 0) {
-                        duration = 30;
                         int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
                                 prebaked.getEffectId());
+                        duration = RICHTAP_PREBAKED_DURATION_MS;
                         mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
-                    } else {
-                        duration = mNativeWrapper.perform(prebaked.getEffectId(),
-                            prebaked.getEffectStrength(), vibrationId, stepId);
                     }
-                } else {
-                    duration = mNativeWrapper.perform(prebaked.getEffectId(),
-                            prebaked.getEffectStrength(), vibrationId, stepId);
+                    if (duration <= 0) {
+                        duration = mNativeWrapper.perform(prebaked.getEffectId(),
+                                prebaked.getEffectStrength(), vibrationId, stepId);
+                    }
                 }
                 if (duration > 0) {
                     updateStateAndNotifyListenersLocked(State.VIBRATING);
