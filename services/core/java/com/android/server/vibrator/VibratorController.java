@@ -374,6 +374,9 @@ final class VibratorController {
                         duration = mNativeWrapper.perform(prebaked.getEffectId(),
                             prebaked.getEffectStrength(), vibrationId, stepId);
                     }
+                } else {
+                    duration = mNativeWrapper.perform(prebaked.getEffectId(),
+                            prebaked.getEffectStrength(), vibrationId, stepId);
                 }
                 if (duration > 0) {
                     mCurrentAmplitude = -1;
