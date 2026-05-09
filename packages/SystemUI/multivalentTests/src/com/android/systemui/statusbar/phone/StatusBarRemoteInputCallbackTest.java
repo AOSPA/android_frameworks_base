@@ -237,8 +237,8 @@ public class StatusBarRemoteInputCallbackTest extends SysuiTestCase {
         } else {
             verify(mGroupExpansionManager).toggleGroupExpansion(enrEntry);
         }
+        verify(privateLayout).setOnExpandedVisibleListener(any());
         verify(enr, never()).setUserExpanded(anyBoolean());
-        verify(privateLayout, never()).setOnExpandedVisibleListener(any());
     }
 
     @Test
@@ -262,10 +262,10 @@ public class StatusBarRemoteInputCallbackTest extends SysuiTestCase {
                 enr, mock(View.class), false, onExpandedVisibleRunner);
 
         // THEN
+        verify(privateLayout).setOnExpandedVisibleListener(any());
         verify(mGroupExpansionManager, never()).toggleGroupExpansion(enrEntry);
         verify(mGroupExpansionManager, never()).toggleGroupExpansion(any(NotificationEntryAdapter.class));
         verify(enr, never()).setUserExpanded(anyBoolean());
-        verify(privateLayout, never()).setOnExpandedVisibleListener(any());
     }
 
     @Test
@@ -320,7 +320,7 @@ public class StatusBarRemoteInputCallbackTest extends SysuiTestCase {
 
         // THEN
         verify(enr, never()).toggleExpansionState();
-        verify(privateLayout, never()).setOnExpandedVisibleListener(onExpandedVisibleRunner);
+        verify(privateLayout).setOnExpandedVisibleListener(onExpandedVisibleRunner);
         verify(enr, never()).setUserExpanded(anyBoolean());
         verify(mGroupExpansionManager, never()).toggleGroupExpansion(any(NotificationEntry.class));
         verify(mGroupExpansionManager, never()).toggleGroupExpansion(any(NotificationEntryAdapter.class));
@@ -378,7 +378,7 @@ public class StatusBarRemoteInputCallbackTest extends SysuiTestCase {
 
         // THEN
         verify(enr, never()).toggleExpansionState();
-        verify(privateLayout, never()).setOnExpandedVisibleListener(onExpandedVisibleRunner);
+        verify(privateLayout).setOnExpandedVisibleListener(onExpandedVisibleRunner);
         verify(enr, never()).setUserExpanded(anyBoolean());
         verify(mGroupExpansionManager, never()).toggleGroupExpansion(any(NotificationEntry.class));
         verify(mGroupExpansionManager, never()).toggleGroupExpansion(any(NotificationEntryAdapter.class));
