@@ -214,11 +214,11 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
     @GuardedBy("mLock")
     @Nullable private HapticFeedbackVibrationProvider mHapticFeedbackVibrationProvider;
     @GuardedBy("mLock")
-    private IRichtapCallback mRichtapAidlCallback = new RichtapCallback();
+    private IRichtapCallback mRichTapAidlCallback = new RichTapCallback();
     @GuardedBy("mLock")
     private RichTapVibratorService mRichTapService = null;
 
-    private static final class RichtapCallback extends IRichtapCallback.Stub {
+    private static final class RichTapCallback extends IRichtapCallback.Stub {
         @Override
         public void onCallback(int result) {
             if (DEBUG) Slog.d(TAG, "RichTap callback result: " + result);
@@ -255,7 +255,7 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
                             Status.CANCELLED_BY_FOREGROUND_USER);
                 }
             } else if (intent.getAction().equals(RichTapVibratorService.ACTION_CHANGE_MODE)) {
-                int mode = intent.getIntExtra("mode", -1);
+                int mode = intent.getIntExtra(RichTapVibratorService.EXTRA_MODE, -1);
                 Slog.i(TAG, "RichTap mode change received, mode: " + mode);
                 if (mode == -1 || mRichTapService == null) {
                     Slog.e(TAG, "RichTap invalid mode or service not initialized!");
@@ -419,7 +419,7 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
         mInternalService = new LocalService();
 
         if (RichTapVibrationEffect.isSupported()) {
-            mRichTapService = new RichTapVibratorService(mRichtapAidlCallback);
+            mRichTapService = new RichTapVibratorService(mRichTapAidlCallback);
         }
 
         IntentFilter filter = new IntentFilter();
@@ -737,7 +737,7 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
         }
 
         // Check and handle RichTap effects if supported
-        if (mRichTapService != null && mRichTapService.disposeRichtapEffectParams(effect)) {
+        if (mRichTapService != null && mRichTapService.playRichTapParameterEffect(effect)) {
             return null;
         }
 
@@ -1313,7 +1313,7 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
 
     @GuardedBy("mLock")
     private void doVibratorOnExtPrebakedEffectLocked(VibrationEffect effect) {
-       Trace.traceBegin(Trace.TRACE_TAG_VIBRATOR, "doVibratorOnExtPrebakedEffectLocked");
+        Trace.traceBegin(Trace.TRACE_TAG_VIBRATOR, "doVibratorOnExtPrebakedEffectLocked");
         try {
             final ExtPrebaked prebaked = (ExtPrebaked) effect;
             mRichTapService.richTapVibratorSetAmplitude(VibrationEffect.MAX_AMPLITUDE);

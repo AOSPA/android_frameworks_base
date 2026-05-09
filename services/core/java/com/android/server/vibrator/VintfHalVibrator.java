@@ -57,6 +57,8 @@ import java.util.function.Consumer;
 /** Implementations for {@link HalVibrator} backed by VINTF objects. */
 class VintfHalVibrator {
     private static final String TAG = "VintfHalVibrator";
+    // RichTap perform returns a command id, so use a short positive duration for framework state.
+    private static final int RICHTAP_PREBAKED_DURATION_MS = 30;
 
     /** {@link VintfSupplier} for {@link IVibrator} service managed by {@link IVibratorManager}. */
     static final class ManagedVibratorSupplier extends VintfSupplier<IVibrator> {
@@ -392,7 +394,7 @@ class VintfHalVibrator {
                                     prebaked.getEffectStrength())
                             : 0;
                     if (strength > 0) {
-                        result = 30;
+                        result = RICHTAP_PREBAKED_DURATION_MS;
                         int richTapEffectId = RichTapVibrationEffect.getInnerEffectId(
                                 prebaked.getEffectId());
                         mRichTapService.richTapVibratorPerform(richTapEffectId, (byte) strength);
