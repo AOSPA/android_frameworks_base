@@ -66,6 +66,7 @@ import com.android.internal.app.IAppOpsService;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -285,6 +286,26 @@ public class Camera {
     private static final int CAMERA_FACE_DETECTION_SW = 1;
 
     /**
+     * @hide
+     */
+// QTI_BEGIN: 2018-03-10: Camera: Expose Aux camera to apps present in the whitelist
+    public static boolean shouldExposeAuxCamera() {
+        String packageName = ActivityThread.currentOpPackageName();
+        if (packageName == null) {
+            return true;
+        }
+        /* Force to expose only two cameras
+         * if the package name does not falls in this bucket
+         */
+        List<String> packageList = Arrays.asList(
+                SystemProperties.get("vendor.camera.aux.packagelist", packageName).split(","));
+        List<String> packageExcludelist = Arrays.asList(
+                SystemProperties.get("vendor.camera.aux.packageexcludelist", "").split(","));
+
+        return packageList.contains(packageName) && !packageExcludelist.contains(packageName);
+    }
+
+    /**
      * Returns the number of physical cameras available on this device.
      * The return value of this method might change dynamically if the device
      * supports external cameras and an external camera is connected or
@@ -299,24 +320,7 @@ public class Camera {
      * @return total number of accessible camera devices, or 0 if there are no
      *   cameras or an error was encountered enumerating them.
      */
-// QTI_BEGIN: 2018-03-10: Camera: Expose Aux camera to apps present in the whitelist
     public static int getNumberOfCameras() {
-        boolean exposeAuxCamera = false;
-        String packageName = ActivityThread.currentOpPackageName();
-        /* Force to expose only two cameras
-         * if the package name does not falls in this bucket
-         */
-        String packageList = SystemProperties.get("vendor.camera.aux.packagelist");
-        if (packageList.length() > 0) {
-            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
-            splitter.setString(packageList);
-            for (String str : splitter) {
-                if (packageName.equals(str)) {
-                    exposeAuxCamera = true;
-                    break;
-                }
-            }
-        }
 // QTI_END: 2018-03-10: Camera: Expose Aux camera to apps present in the whitelist
 // QTI_BEGIN: 2024-09-26: Camera: Remove deprecated JNI method _getNumberOfCameras()
 
@@ -324,7 +328,7 @@ public class Camera {
         int numberOfCameras = getNumberOfCameras(context);
 // QTI_END: 2024-09-26: Camera: Remove deprecated JNI method _getNumberOfCameras()
 // QTI_BEGIN: 2018-03-10: Camera: Expose Aux camera to apps present in the whitelist
-        if (exposeAuxCamera == false && (numberOfCameras > 2)) {
+        if (!shouldExposeAuxCamera() && (numberOfCameras > 2)) {
             numberOfCameras = 2;
         }
 // QTI_END: 2018-03-10: Camera: Expose Aux camera to apps present in the whitelist
