@@ -107,14 +107,18 @@ public class ChargingControlController extends LineageHealthFeature {
         mDeadline = new Deadline(mChargingControl, mContext);
         mLimit = new Limit(mChargingControl, mContext);
         mToggle = new Toggle(mChargingControl, mContext);
-        if (mLimit.isSupported()) {
-            mCurrentProvider = mLimit;
-        } else if (mToggle.isSupported()) {
-            mCurrentProvider = mToggle;
-        } else if (mDeadline.isSupported()) {
-            mCurrentProvider = mDeadline;
-        } else {
-            Log.wtf(TAG, "No charging control provider is supported");
+
+        mCurrentProvider = getProviderForMode(getMode());
+        if (mCurrentProvider == null) {
+            if (mLimit.isSupported()) {
+                mCurrentProvider = mLimit;
+            } else if (mToggle.isSupported()) {
+                mCurrentProvider = mToggle;
+            } else if (mDeadline.isSupported()) {
+                mCurrentProvider = mDeadline;
+            } else {
+                Log.wtf(TAG, "No charging control provider is supported");
+            }
         }
     }
 
@@ -144,18 +148,7 @@ public class ChargingControlController extends LineageHealthFeature {
             return false;
         }
 
-        mCurrentProvider = null;
-        if (mode == MODE_LIMIT) {
-            if (mLimit.isSupported()) {
-                mCurrentProvider = mLimit;
-            } else if (mToggle.isSupported()) {
-                mCurrentProvider = mToggle;
-            }
-        } else if (mode == MODE_AUTO || mode == MODE_MANUAL) {
-            if (mDeadline.isSupported()) {
-                mCurrentProvider = mDeadline;
-            }
-        }
+        mCurrentProvider = getProviderForMode(mode);
 
         if (mCurrentProvider == null) {
             return false;
@@ -163,6 +156,27 @@ public class ChargingControlController extends LineageHealthFeature {
 
         putInt(Settings.System.CHARGING_CONTROL_MODE, mode);
         return true;
+    }
+
+    ChargingControlProvider getProviderForMode(int mode) {
+        if (mode < MODE_NONE || mode > MODE_LIMIT) {
+            return null;
+        }
+
+        if (mode == MODE_LIMIT) {
+            if (mLimit.isSupported()) {
+                return mLimit;
+            }
+            if (mToggle.isSupported()) {
+                return mToggle;
+            }
+        } else if (mode == MODE_AUTO || mode == MODE_MANUAL) {
+            if (mDeadline.isSupported()) {
+                return mDeadline;
+            }
+        }
+
+        return null;
     }
 
     public int getStartTime() {
