@@ -21,6 +21,7 @@ import android.hardware.display.BrightnessInfo.BRIGHTNESS_MAX_REASON_NONE
 import android.hardware.display.BrightnessInfo.HIGH_BRIGHTNESS_MODE_OFF
 import com.android.systemui.brightness.data.model.LinearBrightness
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 
@@ -38,6 +39,17 @@ class FakeScreenBrightnessRepository(
     override val maxLinearBrightness = brightnessInfo.map { LinearBrightness(it.brightnessMaximum) }
     override val isBrightnessOverriddenByWindow =
         MutableStateFlow(initialBrightnessInfo.isBrightnessOverrideByWindow).asStateFlow()
+
+    private val _isAutoBrightnessEnabled = MutableStateFlow(false)
+    override val isAutoBrightnessEnabledFlow: StateFlow<Boolean> = _isAutoBrightnessEnabled.asStateFlow()
+
+    override fun toggleBrightnessMode() {
+        _isAutoBrightnessEnabled.value = !_isAutoBrightnessEnabled.value
+    }
+
+    fun setAutoBrightnessEnabled(enabled: Boolean) {
+        _isAutoBrightnessEnabled.value = enabled
+    }
 
     override suspend fun getMinMaxLinearBrightness(): Pair<LinearBrightness, LinearBrightness> {
         return minMaxLinearBrightness()
