@@ -20,4 +20,7 @@
         <item>Show percentage when charging (default)</item>
         <item>Don\'t show this icon</item>
     </string-array>
+
+    <!-- QS button to enable adaptive brightness -->
+    <string name="accessibility_adaptive_brightness">Adaptive brightness</string>
 </resources>
