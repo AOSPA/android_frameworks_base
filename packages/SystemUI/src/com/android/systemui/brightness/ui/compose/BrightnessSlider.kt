@@ -30,11 +30,16 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -50,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
@@ -68,6 +74,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
@@ -82,6 +89,7 @@ import com.android.compose.lifecycle.DisposableEffectWithLifecycle
 import com.android.compose.modifiers.padding
 import com.android.compose.modifiers.sliderPercentage
 import com.android.compose.modifiers.thenIf
+import com.android.compose.theme.LocalAndroidColorScheme
 import com.android.compose.ui.graphics.drawInOverlay
 import com.android.systemui.biometrics.Utils.toBitmap
 import com.android.systemui.brightness.domain.model.GammaBrightness
@@ -111,12 +119,14 @@ import platform.test.motion.compose.values.motionTestValues
 fun BrightnessSlider(
     gammaValue: Int,
     valueRange: IntRange,
+    autoMode: Boolean,
     iconResProvider: (Float) -> Int,
     imageLoader: suspend (Int, Context) -> Icon.Loaded?,
     restriction: PolicyRestriction,
     onRestrictedClick: (PolicyRestriction.Restricted) -> Unit,
     onDrag: (Int) -> Unit,
     onStop: (Int) -> Unit,
+    onIconClick: suspend () -> Unit,
     overriddenByAppState: Boolean,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -192,34 +202,43 @@ fun BrightnessSlider(
         }
     }
 
-    Slider(
-        value = animatedValue,
-        valueRange = floatValueRange,
-        enabled = enabled,
-        colors = colors,
-        onValueChange = {
-            if (enabled) {
-                if (!overriddenByAppState) {
-                    hapticsViewModel.onValueChange(it)
-                    value = it.toInt()
-                    onDrag(value)
+    val hasAutoBrightness = context.resources.getBoolean(
+        com.android.internal.R.bool.config_automatic_brightness_available
+    )
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        Slider(
+            value = animatedValue,
+            valueRange = floatValueRange,
+            enabled = enabled,
+            colors = colors,
+            onValueChange = {
+                if (enabled) {
+                    if (!overriddenByAppState) {
+                        hapticsViewModel.onValueChange(it)
+                        value = it.toInt()
+                        onDrag(value)
+                    }
                 }
-            }
-        },
-        onValueChangeFinished = {
-            if (enabled) {
-                if (!overriddenByAppState) {
-                    hapticsViewModel.onValueChangeEnded()
-                    onStop(value)
+            },
+            onValueChangeFinished = {
+                if (enabled) {
+                    if (!overriddenByAppState) {
+                        hapticsViewModel.onValueChangeEnded()
+                        onStop(value)
+                    }
                 }
-            }
-        },
-        modifier =
-            modifier
-                .sysuiResTag("slider")
-                .semantics(mergeDescendants = true) {
-                    this.text = AnnotatedString(contentDescription)
-                }
+            },
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .sysuiResTag("slider")
+                    .semantics(mergeDescendants = true) {
+                        this.text = AnnotatedString(contentDescription)
+                    }
                 .sliderPercentage {
                     (value - valueRange.first).toFloat() / (valueRange.last - valueRange.first)
                 }
@@ -321,6 +340,14 @@ fun BrightnessSlider(
         },
     )
 
+        if (hasAutoBrightness) {
+            drawAutoBrightnessButton(
+                autoMode = autoMode,
+                onIconClick = onIconClick,
+            )
+        }
+    }
+
     val currentShowToast by rememberUpdatedState(showToast)
     // Showing the warning toast if the current running app window has controlled the
     // brightness value.
@@ -347,6 +374,48 @@ private fun Modifier.sliderBackground(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun drawAutoBrightnessButton(
+    autoMode: Boolean,
+    onIconClick: suspend () -> Unit,
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val backgroundColor by animateColorAsState(
+        targetValue = if (autoMode) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            LocalAndroidColorScheme.current.surfaceEffect1
+        }
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (autoMode) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
+    )
+    val painterRes = if (autoMode) {
+        R.drawable.ic_qs_brightness_auto_on
+    } else {
+        R.drawable.ic_qs_brightness_auto_off
+    }
+
+    FilledIconButton(
+        onClick = { coroutineScope.launch { onIconClick() } },
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = backgroundColor,
+            contentColor = iconTint,
+        ),
+    ) {
+        Icon(
+            painter = painterResource(painterRes),
+            contentDescription = stringResource(R.string.accessibility_adaptive_brightness),
+            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+        )
+    }
+}
+
 @Composable
 fun BrightnessSliderContainer(
     viewModel: BrightnessSliderViewModel,
@@ -358,6 +427,7 @@ fun BrightnessSliderContainer(
     if (gamma == BrightnessSliderViewModel.initialValue.value) { // Ignore initial negative value.
         return
     }
+    val autoMode = viewModel.autoMode
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val restriction by
@@ -401,6 +471,7 @@ fun BrightnessSliderContainer(
             enabled = enabled && !isRestricted,
             gammaValue = gamma,
             valueRange = viewModel.minBrightness.value..viewModel.maxBrightness.value,
+            autoMode = autoMode,
             iconResProvider = BrightnessSliderViewModel::getIconForPercentage,
             imageLoader = viewModel::loadImage,
             restriction = restriction,
@@ -415,6 +486,7 @@ fun BrightnessSliderContainer(
                 dragging = false
                 coroutineScope.launch { viewModel.onDrag(Drag.Stopped(GammaBrightness(it))) }
             },
+            onIconClick = { viewModel.onIconClick() },
             modifier =
                 Modifier.borderOnFocus(
                         color = MaterialTheme.colorScheme.secondary,
