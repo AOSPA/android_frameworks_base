@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be2fa3f6_ac6020f5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001176
+      },
+      "writtenOn": "2026-07-19T04:51:18Z",
+      "side": 1,
+      "message": "https://github.com/AOSPA/android_frameworks_base/commit/7488d59c297921df35c0ebb2f8be532cf80208fa",
+      "revId": "698786d50dee72e9e9c7b727379905bc910a5722",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
