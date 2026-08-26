@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65bcfedd_1ee884d3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000579
+      },
+      "writtenOn": "2026-08-26T16:57:36Z",
+      "side": 1,
+      "message": "the auto brightness icon should be a little smaller",
+      "revId": "e051f84e905cc1c44c6cc0ba503e50daa5bcd080",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
