@@ -20,6 +20,7 @@ import android.content.applicationContext
 import com.android.systemui.kosmos.Kosmos
 import com.android.systemui.kosmos.applicationCoroutineScope
 import com.android.systemui.log.table.logcatTableLogBuffer
+import com.android.systemui.shared.settings.data.repository.secureSettingsRepository
 import com.android.systemui.statusbar.pipeline.shared.ConnectivityConstants
 import com.android.systemui.statusbar.pipeline.wifi.domain.interactor.wifiInteractor
 import com.android.systemui.statusbar.pipeline.wifi.shared.WifiConstants
@@ -34,5 +35,6 @@ val Kosmos.wifiViewModel by
             wifiInteractor,
             applicationCoroutineScope,
             mock<WifiConstants>(),
+            secureSettingsRepository,
         )
     }

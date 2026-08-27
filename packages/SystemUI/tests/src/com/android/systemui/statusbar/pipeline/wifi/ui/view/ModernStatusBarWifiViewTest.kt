@@ -30,11 +30,13 @@ import androidx.test.filters.SmallTest
 import com.android.systemui.SysuiTestCase
 import com.android.systemui.log.table.logcatTableLogBuffer
 import com.android.systemui.res.R
+import com.android.systemui.shared.settings.data.repository.fakeSecureSettingsRepository
 import com.android.systemui.statusbar.StatusBarIconView.STATE_DOT
 import com.android.systemui.statusbar.StatusBarIconView.STATE_HIDDEN
 import com.android.systemui.statusbar.StatusBarIconView.STATE_ICON
 import com.android.systemui.statusbar.core.NewStatusBarIcons
 import com.android.systemui.statusbar.phone.StatusBarLocation
+import com.android.systemui.statusbar.pipeline.ims.data.repository.CommonImsRepository
 import com.android.systemui.statusbar.pipeline.shared.ConnectivityConstants
 import com.android.systemui.statusbar.pipeline.shared.data.repository.FakeConnectivityRepository
 import com.android.systemui.statusbar.pipeline.shared.data.repository.connectivityRepository
@@ -48,6 +50,7 @@ import com.android.systemui.statusbar.pipeline.wifi.ui.viewmodel.LocationBasedWi
 import com.android.systemui.statusbar.pipeline.wifi.ui.viewmodel.LocationBasedWifiViewModel.Companion.viewModelForLocation
 import com.android.systemui.statusbar.pipeline.wifi.ui.viewmodel.WifiViewModel
 import com.android.systemui.testKosmos
+import org.mockito.kotlin.mock
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,7 +88,7 @@ class ModernStatusBarWifiViewTest : SysuiTestCase() {
         wifiRepository = FakeWifiRepository()
         wifiRepository.setIsWifiEnabled(true)
         scope = CoroutineScope(Dispatchers.Unconfined)
-        interactor = WifiInteractorImpl(connectivityRepository, wifiRepository, scope)
+        interactor = WifiInteractorImpl(connectivityRepository, wifiRepository, mock<CommonImsRepository>(), scope)
         val viewModelCommon =
             WifiViewModel(
                 connectivityConstants,
@@ -94,6 +97,7 @@ class ModernStatusBarWifiViewTest : SysuiTestCase() {
                 interactor,
                 scope,
                 wifiConstants,
+                kosmos.fakeSecureSettingsRepository,
             )
         viewModel = viewModelForLocation(viewModelCommon, StatusBarLocation.HOME)
     }

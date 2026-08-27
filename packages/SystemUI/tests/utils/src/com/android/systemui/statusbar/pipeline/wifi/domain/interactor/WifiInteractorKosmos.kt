@@ -18,14 +18,17 @@ package com.android.systemui.statusbar.pipeline.wifi.domain.interactor
 
 import com.android.systemui.kosmos.Kosmos
 import com.android.systemui.kosmos.applicationCoroutineScope
+import com.android.systemui.statusbar.pipeline.ims.data.repository.CommonImsRepository
 import com.android.systemui.statusbar.pipeline.shared.data.repository.connectivityRepository
 import com.android.systemui.statusbar.pipeline.wifi.data.repository.wifiRepository
+import org.mockito.kotlin.mock
 
 val Kosmos.wifiInteractor: WifiInteractor by
     Kosmos.Fixture {
         WifiInteractorImpl(
             connectivityRepository,
             wifiRepository,
+            mock<CommonImsRepository>(),
             applicationCoroutineScope,
         )
     }

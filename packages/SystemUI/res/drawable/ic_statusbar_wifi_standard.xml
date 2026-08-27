@@ -1,42 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Copyright (c) 2019, The Linux Foundation. All rights reserved.
+    Copyright (C) 2026 Paranoid Android
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are
-    met:
-        * Redistributions of source code must retain the above copyright
-          notice, this list of conditions and the following disclaimer.
-        * Redistributions in binary form must reproduce the above
-          copyright notice, this list of conditions and the following
-          disclaimer in the documentation and/or other materials provided
-          with the distribution.
-        * Neither the name of The Linux Foundation nor the names of its
-          contributors may be used to endorse or promote products derived
-          from this software without specific prior written permission.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
-    ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-    BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-    BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-    OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-    IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="26dp"
+    android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="26"
-    android:viewportHeight="24"
+    android:viewportWidth="24.0"
+    android:viewportHeight="24.0"
     android:tint="?android:attr/colorControlNormal">
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="m 25.626571,16.969114 v 0 q 0,1.36304 -0.84885,2.1693 -0.84886,0.80626 -2.32751,0.80626 v 0 q -1.29001,0 -2.06585,-0.58112 -0.77583,-0.58112 -0.95838,-1.6825 v 0 l 1.70988,-0.13995 q 0.13387,0.54765 0.47462,0.79713 0.34076,0.24949 0.85799,0.24949 v 0 q 0.63892,0 1.01923,-0.4077 0.38031,-0.40769 0.38031,-1.1744 v 0 q 0,-0.67543 -0.35901,-1.08008 -0.35902,-0.40465 -1.00402,-0.40465 v 0 q -0.71195,0 -1.16223,0.55373 v 0 h -1.66729 l 0.29817,-4.825391 h 5.15397 v 1.27176 h -3.6023 l -0.13996,2.166251 q 0.62067,-0.54764 1.55167,-0.54764 v 0 q 1.22308,0 1.95632,0.76062 0.73324,0.76062 0.73324,2.06889 z"/>
+        android:pathData="M17.92,13.89C18.62,13.18 18.56,12.01 17.69,11.53C16.00,10.60 14.06,10.06 12.01,10.06C9.95,10.06 8.00,10.60 6.32,11.53C5.45,12.01 5.39,13.18 6.09,13.89C6.66,14.46 7.57,14.52 8.30,14.16C9.42,13.61 10.68,13.30 12.01,13.30C13.33,13.30 14.59,13.61 15.71,14.16C16.44,14.52 17.35,14.46 17.92,13.89Z" />
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="m 12.998641,2.099185 c -7.3000003,0 -12.0991851,4.002174 -12.59918509,4.402174 L 12.998641,21.998642 16.944293,17.148098 a 7.7288137,8.3389834 0 0 1 -0.06114,-0.978261 7.7288137,8.3389834 0 0 1 7.634511,-8.335597 l 1.084238,-1.332881 c -0.499999,-0.4 -5.303261,-4.402174 -12.603261,-4.402174 z"/>
+        android:pathData="M22.07,9.74C22.73,9.07 22.71,7.98 21.95,7.44C19.16,5.41 15.72,4.20 12.01,4.20C8.29,4.20 4.86,5.40 2.06,7.44C1.31,7.98 1.28,9.07 1.94,9.74C2.56,10.35 3.53,10.38 4.23,9.88C6.44,8.35 9.12,7.45 12.01,7.45C14.89,7.45 17.57,8.35 19.78,9.88C20.48,10.38 21.46,10.35 22.07,9.74Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12.01,19.80C13.08,19.80 13.96,18.93 13.96,17.85C13.96,16.77 13.08,15.90 12.01,15.90C10.93,15.90 10.06,16.77 10.06,17.85C10.06,18.93 10.93,19.80 12.01,19.80Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M24.00,20.01L24.00,20.01Q24.00,20.95 23.43,21.47Q22.86,22.00 21.84,22.00L21.84,22.00Q20.72,22.00 20.11,21.27Q19.52,20.56 19.52,19.15L19.52,19.15Q19.52,17.61 20.13,16.81Q20.74,16.03 21.88,16.03L21.88,16.03Q22.69,16.03 23.15,16.36Q23.64,16.68 23.83,17.37L23.83,17.37L22.62,17.52Q22.45,16.94 21.86,16.94L21.86,16.94Q21.34,16.94 21.05,17.41Q20.75,17.88 20.75,18.81L20.75,18.81Q20.96,18.52 21.32,18.35Q21.69,18.18 22.14,18.18L22.14,18.18Q23.00,18.18 23.49,18.67Q24.00,19.17 24.00,20.01ZM22.71,20.05L22.71,20.05Q22.71,19.56 22.47,19.30Q22.22,19.04 21.78,19.04L21.78,19.04Q21.35,19.04 21.10,19.28Q20.84,19.53 20.84,19.93L20.84,19.93Q20.84,20.43 21.11,20.76Q21.37,21.09 21.80,21.09L21.80,21.09Q22.23,21.09 22.48,20.82Q22.71,20.54 22.71,20.05Z" />
 </vector>

@@ -45,6 +45,7 @@ sealed interface SystemStatusIconViewModel {
          * a hydrated value.
          */
         val icon: Icon?
+        val wifiStandardIcon: Icon?
         /** True if we should always reserve space for the activity in/out indicators. */
         val isActivityContainerVisible: Boolean
         /** True if the activity in arrow should be visible. */

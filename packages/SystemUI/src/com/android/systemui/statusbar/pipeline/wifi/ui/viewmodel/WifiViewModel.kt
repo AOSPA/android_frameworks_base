@@ -17,10 +17,15 @@
 package com.android.systemui.statusbar.pipeline.wifi.ui.viewmodel
 
 import android.content.Context
+import android.net.wifi.ScanResult
+import com.android.systemui.common.shared.model.Icon
 import com.android.systemui.dagger.SysUISingleton
 import com.android.systemui.dagger.qualifiers.Background
 import com.android.systemui.log.table.TableLogBuffer
 import com.android.systemui.log.table.logDiffsForTable
+import com.android.systemui.res.R
+import com.android.systemui.shared.settings.data.repository.SecureSettingsRepository
+import com.android.systemui.statusbar.core.NewStatusBarIcons
 import com.android.systemui.statusbar.pipeline.dagger.WifiTableLog
 import com.android.systemui.statusbar.pipeline.shared.ConnectivityConstants
 import com.android.systemui.statusbar.pipeline.shared.data.model.DataActivityModel
@@ -59,6 +64,7 @@ constructor(
     interactor: WifiInteractor,
     @Background scope: CoroutineScope,
     wifiConstants: WifiConstants,
+    secureSettingsRepository: SecureSettingsRepository,
 ) : WifiViewModelCommon {
     override val wifiIcon: StateFlow<WifiIcon> =
         combine(
@@ -132,4 +138,45 @@ constructor(
             }
             .distinctUntilChanged()
             .stateIn(scope, SharingStarted.WhileSubscribed(), VoWifiIcon.Hidden)
+
+    private val isWifiStandardDisplayEnabled: Flow<Boolean> =
+        secureSettingsRepository.boolSetting(
+            "wifi_standard",
+            context.resources.getBoolean(com.android.settingslib.R.bool.config_show_wifi_standard),
+        )
+
+    override val wifiStandardIcon: StateFlow<Icon?> =
+        combine(wifiIcon, interactor.wifiNetwork, isWifiStandardDisplayEnabled) {
+            wifiIcon,
+            network,
+            enabled,
+            ->
+            if (
+                !enabled ||
+                    !NewStatusBarIcons.isEnabled ||
+                    wifiIcon !is WifiIcon.Visible ||
+                    network !is WifiNetworkModel.Active
+            ) {
+                null
+            } else {
+                network.toWifiStandardIcon()
+            }
+        }
+            .distinctUntilChanged()
+            .stateIn(scope, SharingStarted.WhileSubscribed(), null)
+}
+
+private fun WifiNetworkModel.Active.toWifiStandardIcon(): Icon.Resource? {
+    if (this.showExclamation) {
+        return null
+    }
+    val resId =
+        when (this.wifiStandard) {
+            ScanResult.WIFI_STANDARD_11N -> R.drawable.ic_wifi_standard_4
+            ScanResult.WIFI_STANDARD_11AC -> R.drawable.ic_wifi_standard_5
+            ScanResult.WIFI_STANDARD_11AX -> R.drawable.ic_wifi_standard_6
+            ScanResult.WIFI_STANDARD_11BE -> R.drawable.ic_wifi_standard_7
+            else -> return null
+        }
+    return Icon.Resource(resId, null)
 }

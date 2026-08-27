@@ -50,6 +50,12 @@ constructor(@Assisted private val context: Context, wifiViewModel: WifiViewModel
             initialValue = WifiIcon.Hidden,
         )
 
+    override val wifiStandardIcon: Icon? by
+        wifiViewModel.wifiStandardIcon.hydratedStateOf(
+            traceName = "SystemStatus.wifiIcon.standardIcon",
+            initialValue = null,
+        )
+
     override val isActivityContainerVisible: Boolean by
         wifiViewModel.isActivityContainerVisible.hydratedStateOf(
             traceName = "SystemStatus.wifiIcon.activityContainerVisible",

@@ -24,6 +24,7 @@ import com.android.systemui.common.shared.model.ContentDescription.Companion.loa
 import com.android.systemui.coroutines.collectLastValue
 import com.android.systemui.kosmos.testScope
 import com.android.systemui.log.table.logcatTableLogBuffer
+import com.android.systemui.shared.settings.data.repository.fakeSecureSettingsRepository
 import com.android.systemui.statusbar.connectivity.WifiIcons
 import com.android.systemui.statusbar.phone.StatusBarLocation
 import com.android.systemui.statusbar.pipeline.airplane.ui.viewmodel.AirplaneModeViewModel
@@ -389,6 +390,7 @@ class WifiViewModelTest : SysuiTestCase() {
                 interactor,
                 testScope.backgroundScope,
                 wifiConstants,
+                kosmos.fakeSecureSettingsRepository,
             )
     }
 

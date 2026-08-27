@@ -16,6 +16,7 @@
 
 package com.android.systemui.statusbar.pipeline.wifi.ui.viewmodel
 
+import com.android.systemui.common.shared.model.Icon
 import com.android.systemui.statusbar.pipeline.wifi.ui.model.VoWifiIcon
 import com.android.systemui.statusbar.pipeline.wifi.ui.model.WifiIcon
 import kotlinx.coroutines.flow.Flow
@@ -39,4 +40,7 @@ interface WifiViewModelCommon {
     val isActivityContainerVisible: Flow<Boolean>
     /** The VoWifi icon that should be displayed. */
     val voWifiIcon: Flow<VoWifiIcon>
+
+    /** The Wi-Fi generation badge icon to be displayed over the Wi-Fi icon. */
+    val wifiStandardIcon: StateFlow<Icon?>
 }

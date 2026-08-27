@@ -84,6 +84,13 @@ class ModernStatusBarWifiView(context: Context, attrs: AttributeSet?) :
             lp.height =
                 resources.getDimensionPixelSize(R.dimen.status_bar_wifi_signal_height_updated)
 
+            val standardIconView = requireViewById<ImageView>(R.id.wifi_standard)
+            standardIconView.adjustViewBounds = true
+            val standardLp = standardIconView.layoutParams
+            standardLp.width = ViewGroup.LayoutParams.WRAP_CONTENT
+            standardLp.height =
+                resources.getDimensionPixelSize(R.dimen.status_bar_wifi_signal_height_updated)
+
             // New status bar icons have a single 3sp spacing defined
             (requireViewById<AlphaOptimizedLinearLayout>(R.id.wifi_group).layoutParams
                     as MarginLayoutParams)

@@ -24,11 +24,13 @@ import com.android.settingslib.AccessibilityContentDescriptions.WIFI_NO_CONNECTI
 import com.android.systemui.SysuiTestCase
 import com.android.systemui.common.shared.model.ContentDescription.Companion.loadContentDescription
 import com.android.systemui.log.table.TableLogBuffer
+import com.android.systemui.shared.settings.data.repository.fakeSecureSettingsRepository
 import com.android.systemui.statusbar.connectivity.WifiIcons.WIFI_FULL_ICONS
 import com.android.systemui.statusbar.connectivity.WifiIcons.WIFI_NO_INTERNET_ICONS
 import com.android.systemui.statusbar.connectivity.WifiIcons.WIFI_NO_NETWORK
 import com.android.systemui.statusbar.pipeline.airplane.data.repository.AirplaneModeRepository
 import com.android.systemui.statusbar.pipeline.airplane.data.repository.airplaneModeRepository
+import com.android.systemui.statusbar.pipeline.ims.data.repository.CommonImsRepository
 import com.android.systemui.statusbar.pipeline.shared.ConnectivityConstants
 import com.android.systemui.statusbar.pipeline.shared.data.model.ConnectivitySlot
 import com.android.systemui.statusbar.pipeline.shared.data.repository.FakeConnectivityRepository
@@ -58,6 +60,7 @@ import org.junit.runners.Parameterized.Parameters
 import org.mockito.Mock
 import org.mockito.Mockito.`when` as whenever
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.mock
 
 @SmallTest
 @RunWith(Parameterized::class)
@@ -84,7 +87,7 @@ internal class WifiViewModelIconParameterizedTest(private val testCase: TestCase
         wifiRepository = FakeWifiRepository()
         wifiRepository.setIsWifiEnabled(true)
         scope = CoroutineScope(IMMEDIATE)
-        interactor = WifiInteractorImpl(connectivityRepository, wifiRepository, scope)
+        interactor = WifiInteractorImpl(connectivityRepository, wifiRepository, mock<CommonImsRepository>(), scope)
     }
 
     @After
@@ -116,6 +119,7 @@ internal class WifiViewModelIconParameterizedTest(private val testCase: TestCase
                     interactor,
                     scope,
                     wifiConstants,
+                    kosmos.fakeSecureSettingsRepository,
                 )
 
             val iconFlow = underTest.wifiIcon

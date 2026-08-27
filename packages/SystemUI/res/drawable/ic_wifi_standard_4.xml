@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
      Copyright (C) 2022 Project Kaleidoscope
-               (C) 2022 Paranoid Android
+               (C) 2022-2026 Paranoid Android
 
      SPDX-License-Identifier: Apache-2.0
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="17.0dp"
+    android:height="12.58dp"
+    android:viewportWidth="16.21"
+    android:viewportHeight="12.0">
     <path
         android:fillColor="@android:color/white"
-        android:pathData="M 17.37 19.6795 L 17.37 18.85 L 21.318 13.1905 L 22.368 13.1905 L 22.368 18.661 L 23.5335 18.661 L 23.5335 19.711 L 22.389 19.711 L 22.389 21.5905 L 21.15 21.5905 L 21.15 19.6795 Z M 18.7245 18.6295 L 21.15 18.6295 L 21.15 15.2695 Z"/>
+        android:pathData="M12.513,10.857 L12.513,10.361 L14.874,6.977 L15.502,6.977 L15.502,10.248 L16.200,10.248 L16.200,10.875 L15.515,10.875 L15.515,12.000 L14.774,12.000 L14.774,10.857 Z M13.323,10.229 L14.774,10.229 L14.774,8.220 Z" />
 </vector>
