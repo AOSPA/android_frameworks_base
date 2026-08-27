@@ -20,6 +20,8 @@ package android.os;
 import android.annotation.NonNull;
 import android.util.Log;
 
+import java.util.Objects;
+
 /**
  * Implementation of a pattern HE parameter vibration effect.
  *
@@ -155,10 +157,7 @@ public final class PatternHeParameter extends VibrationEffect implements Parcela
 
     @Override
     public int hashCode() {
-        int result = 14;
-        result += 37 * mInterval;
-        result += 37 * mAmplitude;
-        return result;
+        return Objects.hash(mInterval, mAmplitude, mFreq);
     }
 
     @Override
@@ -170,7 +169,7 @@ public final class PatternHeParameter extends VibrationEffect implements Parcela
 
     @Override
     public String toDebugString() {
-        return null;
+        return toString();
     }
 
     @Override
@@ -180,7 +179,7 @@ public final class PatternHeParameter extends VibrationEffect implements Parcela
 
     @Override
     public VibrationEffect applyRepeatingIndefinitely(boolean wantRepeating, int loopDelayMs) {
-        return null;
+        return this;
     }
 
     @Override
@@ -205,11 +204,11 @@ public final class PatternHeParameter extends VibrationEffect implements Parcela
 
     @Override
     public VibrationEffect applyAdaptiveScale(float scaleFactor) {
-        return null;
+        return this;
     }
 
     @Override
     public VibrationEffect applyEffectStrength(int effectStrength) {
-        return null;
+        return this;
     }
 }

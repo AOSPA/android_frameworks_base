@@ -66,7 +66,7 @@ public final class HapticParameter extends VibrationEffect implements Parcelable
      * @param length The length value
      */
     public HapticParameter(int[] param, int length) {
-        mParam = param;
+        mParam = param != null ? param.clone() : new int[0];
         mLength = length;
         Log.d(TAG, "created with mLength:" + mLength);
     }
@@ -77,7 +77,7 @@ public final class HapticParameter extends VibrationEffect implements Parcelable
      * @return The parameter array
      */
     public int[] getParam() {
-        return mParam;
+        return mParam.clone();
     }
 
     /**
@@ -150,7 +150,7 @@ public final class HapticParameter extends VibrationEffect implements Parcelable
 
     @Override
     public String toDebugString() {
-        return null;
+        return toString();
     }
 
     @Override
@@ -160,7 +160,7 @@ public final class HapticParameter extends VibrationEffect implements Parcelable
 
     @Override
     public VibrationEffect applyRepeatingIndefinitely(boolean wantRepeating, int loopDelayMs) {
-        return null;
+        return this;
     }
 
     @Override
@@ -183,11 +183,11 @@ public final class HapticParameter extends VibrationEffect implements Parcelable
 
     @Override
     public VibrationEffect applyAdaptiveScale(float scaleFactor) {
-        return null;
+        return this;
     }
 
     @Override
     public VibrationEffect applyEffectStrength(int effectStrength) {
-        return null;
+        return this;
     }
 }

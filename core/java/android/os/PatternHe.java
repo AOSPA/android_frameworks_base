@@ -19,6 +19,9 @@ package android.os;
 
 import android.annotation.NonNull;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
  * Implementation of a pattern HE vibration effect.
  *
@@ -54,11 +57,14 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
      * @hide
      */
     public PatternHe(@NonNull Parcel in) {
-        mPatternInfo = in.createIntArray();
+        int[] patternInfo = in.createIntArray();
+        mPatternInfo = patternInfo != null ? patternInfo : new int[0];
         mLooper = in.readInt();
         mInterval = in.readInt();
         mAmplitude = in.readInt();
         mFreq = in.readInt();
+        mDuration = in.readLong();
+        mEventCount = in.readInt();
     }
 
     /**
@@ -69,7 +75,7 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
      * @param eventCount  The event count
      */
     public PatternHe(@NonNull int[] patternInfo, long duration, int eventCount) {
-        mPatternInfo = patternInfo;
+        mPatternInfo = patternInfo != null ? patternInfo.clone() : new int[0];
         mDuration = duration;
         mEventCount = eventCount;
     }
@@ -85,7 +91,7 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
      */
     public PatternHe(@NonNull int[] patternInfo, int looper, int interval, int amplitude,
             int freq) {
-        mPatternInfo = patternInfo;
+        mPatternInfo = patternInfo != null ? patternInfo.clone() : new int[0];
         mLooper = looper;
         mInterval = interval;
         mFreq = freq;
@@ -138,7 +144,7 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
      * @return The pattern information array
      */
     public @NonNull int[] getPatternInfo() {
-        return mPatternInfo;
+        return mPatternInfo.clone();
     }
 
     /**
@@ -179,9 +185,12 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
 
     @Override
     public void validate() {
-        if (mDuration <= 0) {
+        if (mPatternInfo == null || mPatternInfo.length == 0) {
+            throw new IllegalArgumentException("patternInfo must not be empty");
+        }
+        if (mDuration < 0) {
             throw new IllegalArgumentException(
-                    "duration must be positive (duration=" + mDuration + ")");
+                    "duration must not be negative (duration=" + mDuration + ")");
         }
     }
 
@@ -190,14 +199,19 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
         if (!(o instanceof PatternHe other)) {
             return false;
         }
-        return other.mDuration == mDuration && other.mPatternInfo == mPatternInfo;
+        return other.mLooper == mLooper
+                && other.mInterval == mInterval
+                && other.mAmplitude == mAmplitude
+                && other.mFreq == mFreq
+                && other.mDuration == mDuration
+                && other.mEventCount == mEventCount
+                && Arrays.equals(mPatternInfo, other.mPatternInfo);
     }
 
     @Override
     public int hashCode() {
-        int result = 17;
-        result += 37 * (int) mDuration;
-        result += 37 * mEventCount;
+        int result = Objects.hash(mLooper, mInterval, mAmplitude, mFreq, mDuration, mEventCount);
+        result = 31 * result + Arrays.hashCode(mPatternInfo);
         return result;
     }
 
@@ -211,7 +225,7 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
 
     @Override
     public String toDebugString() {
-        return null;
+        return toString();
     }
 
     @Override
@@ -221,7 +235,7 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
 
     @Override
     public VibrationEffect applyRepeatingIndefinitely(boolean wantRepeating, int loopDelayMs) {
-        return null;
+        return this;
     }
 
     @Override
@@ -242,15 +256,17 @@ public final class PatternHe extends VibrationEffect implements Parcelable {
         out.writeInt(mInterval);
         out.writeInt(mAmplitude);
         out.writeInt(mFreq);
+        out.writeLong(mDuration);
+        out.writeInt(mEventCount);
     }
 
     @Override
     public VibrationEffect applyAdaptiveScale(float scaleFactor) {
-        return null;
+        return this;
     }
 
     @Override
     public VibrationEffect applyEffectStrength(int effectStrength) {
-        return null;
+        return this;
     }
 }

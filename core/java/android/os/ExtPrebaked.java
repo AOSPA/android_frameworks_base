@@ -19,6 +19,8 @@ package android.os;
 
 import android.annotation.NonNull;
 
+import java.util.Objects;
+
 /**
  * Implementation of an extended pre-baked vibration effect.
  *
@@ -129,12 +131,12 @@ public final class ExtPrebaked extends VibrationEffect implements Parcelable {
         if (!(o instanceof ExtPrebaked other)) {
             return false;
         }
-        return mEffectId == other.mEffectId;
+        return mEffectId == other.mEffectId && mStrength == other.mStrength;
     }
 
     @Override
     public int hashCode() {
-        return mEffectId;
+        return Objects.hash(mEffectId, mStrength);
     }
 
     @Override
@@ -144,7 +146,7 @@ public final class ExtPrebaked extends VibrationEffect implements Parcelable {
 
     @Override
     public String toDebugString() {
-        return null;
+        return toString();
     }
 
     @Override
@@ -154,7 +156,7 @@ public final class ExtPrebaked extends VibrationEffect implements Parcelable {
 
     @Override
     public VibrationEffect applyRepeatingIndefinitely(boolean wantRepeating, int loopDelayMs) {
-        return null;
+        return this;
     }
 
     @Override
@@ -176,11 +178,11 @@ public final class ExtPrebaked extends VibrationEffect implements Parcelable {
 
     @Override
     public VibrationEffect applyAdaptiveScale(float scaleFactor) {
-        return null;
+        return this;
     }
 
     @Override
     public VibrationEffect applyEffectStrength(int effectStrength) {
-        return null;
+        return this;
     }
 }

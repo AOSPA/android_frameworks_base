@@ -49,6 +49,7 @@ import android.os.ExternalVibration;
 import android.os.ExternalVibrationScale;
 import android.os.ExtPrebaked;
 import android.os.Handler;
+import android.os.HapticParameter;
 import android.os.IBinder;
 import android.os.ICancellationSignal;
 import android.os.IExternalVibratorService;
@@ -57,6 +58,7 @@ import android.os.IVibratorStateListener;
 import android.os.Looper;
 import android.os.Parcel;
 import android.os.PatternHe;
+import android.os.PatternHeParameter;
 import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
@@ -214,14 +216,24 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
     @GuardedBy("mLock")
     @Nullable private HapticFeedbackVibrationProvider mHapticFeedbackVibrationProvider;
     @GuardedBy("mLock")
-    private IRichtapCallback mRichTapAidlCallback = new RichTapCallback();
+    private IRichtapCallback mRichTapAidlCallback;
     @GuardedBy("mLock")
     private RichTapVibratorService mRichTapService = null;
 
     private static final class RichTapCallback extends IRichtapCallback.Stub {
+        private final WeakReference<VibratorManagerService> mServiceRef;
+
+        RichTapCallback(VibratorManagerService service) {
+            mServiceRef = new WeakReference<>(service);
+        }
+
         @Override
         public void onCallback(int result) {
             if (DEBUG) Slog.d(TAG, "RichTap callback result: " + result);
+            VibratorManagerService service = mServiceRef.get();
+            if (service != null) {
+                service.mHandler.post(service::onRichTapPlaybackComplete);
+            }
         }
 
         @Override
@@ -253,16 +265,6 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
                     maybeClearCurrentAndNextSessionsLocked(
                             VibratorManagerService.this::shouldCancelOnFgUserRequest,
                             Status.CANCELLED_BY_FOREGROUND_USER);
-                }
-            } else if (intent.getAction().equals(RichTapVibratorService.ACTION_CHANGE_MODE)) {
-                int mode = intent.getIntExtra(RichTapVibratorService.EXTRA_MODE, -1);
-                Slog.i(TAG, "RichTap mode change received, mode: " + mode);
-                if (mode == -1 || mRichTapService == null) {
-                    Slog.e(TAG, "RichTap invalid mode or service not initialized!");
-                    return;
-                }
-                synchronized (mLock) {
-                    mRichTapService.richTapSetVibrationMode(mode);
                 }
             }
         }
@@ -419,14 +421,12 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
         mInternalService = new LocalService();
 
         if (RichTapVibrationEffect.isSupported()) {
+            mRichTapAidlCallback = new RichTapCallback(this);
             mRichTapService = new RichTapVibratorService(mRichTapAidlCallback);
         }
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
-        if (mRichTapService != null) {
-            filter.addAction(RichTapVibratorService.ACTION_CHANGE_MODE);
-        }
         if (UserManagerInternal.shouldShowNotificationForBackgroundUserSounds()) {
             filter.addAction(BackgroundUserSoundNotifier.ACTION_MUTE_SOUND);
         }
@@ -736,11 +736,6 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
             return null;
         }
 
-        // Check and handle RichTap effects if supported
-        if (mRichTapService != null && mRichTapService.playRichTapParameterEffect(effect)) {
-            return null;
-        }
-
         if (effect.hasVendorEffects()) {
             if (!hasPermission(android.Manifest.permission.VIBRATE_VENDOR_EFFECTS)) {
                 Slog.e(TAG, "vibrate; no permission for vendor effects");
@@ -769,6 +764,15 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
             // Check if user settings or DnD is set to ignore this vibration.
             Status ignoreStatus = shouldIgnoreVibrationLocked(callerInfo);
             CallerInfo ignoredBy = null;
+
+            if (ignoreStatus == null && mRichTapService != null && isRichTapParameterEffect(effect)) {
+                int mode = startAppOpModeLocked(callerInfo);
+                if (mode == AppOpsManager.MODE_ALLOWED) {
+                    mRichTapService.playRichTapParameterEffect(effect);
+                    finishAppOpModeLocked(callerInfo);
+                }
+                return null;
+            }
 
             // Check if ongoing vibration is more important than this vibration.
             if (ignoreStatus == null) {
@@ -854,10 +858,6 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
             // TODO(b/378492007): Investigate if we can move this around AppOpsManager calls
             final long ident = Binder.clearCallingIdentity();
             try {
-                if (mRichTapService != null) {
-                    stopRichTapVibrationLocked();
-                }
-
                 // TODO(b/370948466): investigate why token not checked on external vibrations.
                 IBinder cancelToken =
                         (mNextSession instanceof ExternalVibrationSession) ? null : token;
@@ -866,7 +866,16 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
                 }
                 cancelToken = (mCurrentSession instanceof ExternalVibrationSession) ? null : token;
                 if (shouldCancelSession(mCurrentSession, usageFilter, cancelToken)) {
-                    mCurrentSession.requestEnd(Status.CANCELLED_BY_USER);
+                    if (mRichTapService != null) {
+                        stopRichTapVibrationLocked();
+                    }
+                    if (!isConductorSession(mCurrentSession)) {
+                        finishAppOpModeLocked(mCurrentSession.getCallerInfo());
+                        clearCurrentSessionLocked();
+                        maybeStartNextSessionLocked();
+                    } else {
+                        mCurrentSession.requestEnd(Status.CANCELLED_BY_USER);
+                    }
                 }
             } finally {
                 Binder.restoreCallingIdentity(ident);
@@ -1285,6 +1294,43 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
         }
     }
 
+    private void onConductorlessSessionEnded(SingleVibrationSession session) {
+        mHandler.post(() -> {
+            synchronized (mLock) {
+                if (mCurrentSession == session) {
+                    stopRichTapVibrationLocked();
+                    finishAppOpModeLocked(session.getCallerInfo());
+                    clearCurrentSessionLocked();
+                    maybeStartNextSessionLocked();
+                }
+            }
+        });
+    }
+
+    private void onRichTapPlaybackComplete() {
+        synchronized (mLock) {
+            if (mCurrentSession instanceof SingleVibrationSession session
+                    && !session.hasVibrationConductor()) {
+                session.requestEnd(Status.FINISHED);
+            }
+        }
+    }
+
+    private boolean isConductorSession(@Nullable VibrationSession session) {
+        if (session instanceof SingleVibrationSession single) {
+            return single.hasVibrationConductor();
+        }
+        return session != null;
+    }
+
+    private boolean isRichTapParameterEffect(CombinedVibration combEffect) {
+        if (!(combEffect instanceof CombinedVibration.Mono)) {
+            return false;
+        }
+        VibrationEffect effect = ((CombinedVibration.Mono) combEffect).getEffect();
+        return effect instanceof PatternHeParameter || effect instanceof HapticParameter;
+    }
+
     private void doVibratorOnEnvelope(int[] relativeTime, int[] scaleArr, int[] freqArr,
             boolean steepMode, int amplitude) {
         synchronized (mLock) {
@@ -1333,16 +1379,41 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
                     && vib.getEffectToPlay() instanceof CombinedVibration.Mono) {
                 VibrationEffect vibrEffect =
                         ((CombinedVibration.Mono) vib.getEffectToPlay()).getEffect();
-                if (vibrEffect instanceof ExtPrebaked) {
-                    doVibratorOnExtPrebakedEffectLocked(vibrEffect);
-                    return null;
-                } else if (vibrEffect instanceof Envelope envelope) {
-                    doVibratorOnEnvelope(envelope.getRelativeTimeArr(), envelope.getScaleArr(),
-                            envelope.getFreqArr(), envelope.isSteepMode(),
-                            envelope.getAmplitude());
-                    return null;
-                } else if (vibrEffect instanceof PatternHe patternHe) {
-                    doVibratorOnPatternHe(patternHe);
+                if (vibrEffect instanceof ExtPrebaked
+                        || vibrEffect instanceof Envelope
+                        || vibrEffect instanceof PatternHe) {
+                    CallerInfo callerInfo = session.getCallerInfo();
+                    if (mCurrentSession != null) {
+                        if (!isConductorSession(mCurrentSession)) {
+                            mCurrentSession.requestEnd(Status.CANCELLED_SUPERSEDED);
+                            finishAppOpModeLocked(mCurrentSession.getCallerInfo());
+                            clearCurrentSessionLocked();
+                        } else {
+                            clearNextSessionLocked(Status.IGNORED_SUPERSEDED, callerInfo);
+                            mNextSession = session;
+                            return null;
+                        }
+                    }
+                    int mode = startAppOpModeLocked(callerInfo);
+                    if (mode != AppOpsManager.MODE_ALLOWED) {
+                        return Status.IGNORED_APP_OPS;
+                    }
+                    mCurrentSession = session;
+                    if (!mCurrentSession.linkToDeath()) {
+                        finishAppOpModeLocked(callerInfo);
+                        mCurrentSession = null;
+                        return Status.IGNORED_ERROR_TOKEN;
+                    }
+                    session.setOnEndListener(this::onConductorlessSessionEnded);
+                    if (vibrEffect instanceof ExtPrebaked) {
+                        doVibratorOnExtPrebakedEffectLocked(vibrEffect);
+                    } else if (vibrEffect instanceof Envelope envelope) {
+                        doVibratorOnEnvelope(envelope.getRelativeTimeArr(), envelope.getScaleArr(),
+                                envelope.getFreqArr(), envelope.isSteepMode(),
+                                envelope.getAmplitude());
+                    } else if (vibrEffect instanceof PatternHe patternHe) {
+                        doVibratorOnPatternHe(patternHe);
+                    }
                     return null;
                 }
             }
@@ -1407,7 +1478,7 @@ public class VibratorManagerService extends IVibratorManagerService.Stub {
     private void maybeStartNextSessionLocked() {
         if (mNextSession instanceof SingleVibrationSession session) {
             mNextSession = null;
-            Status errorStatus = startVibrationOnThreadLocked(session);
+            Status errorStatus = startVibrationLocked(session);
             if (errorStatus != null) {
                 if (DEBUG) {
                     Slog.d(TAG, "Error starting next vibration " + session.getVibration().id);

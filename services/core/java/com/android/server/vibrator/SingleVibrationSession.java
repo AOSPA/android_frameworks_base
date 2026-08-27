@@ -26,6 +26,7 @@ import android.util.Slog;
 import com.android.internal.annotations.GuardedBy;
 
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 /**
  * A vibration session holding a single {@link CombinedVibration} request, performed by a
@@ -41,6 +42,8 @@ final class SingleVibrationSession implements VibrationSession, IBinder.DeathRec
 
     @GuardedBy("mLock")
     private VibrationStepConductor mConductor;
+    @GuardedBy("mLock")
+    private Consumer<SingleVibrationSession> mOnEndListener;
 
     SingleVibrationSession(@NonNull IBinder callerToken, @NonNull CallerInfo callerInfo,
             @NonNull CombinedVibration vibration) {
@@ -51,6 +54,18 @@ final class SingleVibrationSession implements VibrationSession, IBinder.DeathRec
     public void setVibrationConductor(@Nullable VibrationStepConductor conductor) {
         synchronized (mLock) {
             mConductor = conductor;
+        }
+    }
+
+    public void setOnEndListener(@Nullable Consumer<SingleVibrationSession> listener) {
+        synchronized (mLock) {
+            mOnEndListener = listener;
+        }
+    }
+
+    public boolean hasVibrationConductor() {
+        synchronized (mLock) {
+            return mConductor != null;
         }
     }
 
@@ -127,12 +142,18 @@ final class SingleVibrationSession implements VibrationSession, IBinder.DeathRec
     @Override
     public void requestEnd(@NonNull Status status, @Nullable CallerInfo endedBy,
             boolean immediate) {
+        Consumer<SingleVibrationSession> endListener = null;
         synchronized (mLock) {
             if (mConductor != null) {
                 mConductor.notifyCancelled(new Vibration.EndInfo(status, endedBy), immediate);
             } else {
                 mVibration.end(new Vibration.EndInfo(status, endedBy));
+                endListener = mOnEndListener;
+                mOnEndListener = null;
             }
+        }
+        if (endListener != null) {
+            endListener.accept(this);
         }
     }
 
