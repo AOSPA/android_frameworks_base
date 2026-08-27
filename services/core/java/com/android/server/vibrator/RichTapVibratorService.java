@@ -40,8 +40,6 @@ import vendor.aac.hardware.richtap.vibrator.IRichtapVibrator;
  * Service class managing RichTap vibrator functionality.
  */
 public class RichTapVibratorService {
-    public static final String ACTION_CHANGE_MODE = "richtap_change_mode";
-    public static final String EXTRA_MODE = "mode";
     private static final String TAG = RichTapVibratorService.class.getSimpleName();
     private static final String VIBRATOR_DESCRIPTOR = IVibrator.DESCRIPTOR + "/default";
     private static final boolean DEBUG = false;
@@ -102,6 +100,7 @@ public class RichTapVibratorService {
     }
 
     private void runOnRichTapService(String errorMessage, RichTapOperation operation) {
+        final long token = Binder.clearCallingIdentity();
         try {
             IRichtapVibrator service = getRichTapService();
             if (service != null) {
@@ -109,10 +108,13 @@ public class RichTapVibratorService {
             }
         } catch (Exception e) {
             Slog.e(TAG, errorMessage, e);
+        } finally {
+            Binder.restoreCallingIdentity(token);
         }
     }
 
     private int callRichTapService(String errorMessage, RichTapIntOperation operation) {
+        final long token = Binder.clearCallingIdentity();
         try {
             IRichtapVibrator service = getRichTapService();
             if (service != null) {
@@ -120,6 +122,8 @@ public class RichTapVibratorService {
             }
         } catch (Exception e) {
             Slog.e(TAG, errorMessage, e);
+        } finally {
+            Binder.restoreCallingIdentity(token);
         }
         return 0;
     }
@@ -128,12 +132,14 @@ public class RichTapVibratorService {
      * Starts the vibrator for specified duration.
      *
      * @param millis The duration in milliseconds
+     * @return true if successful, false otherwise
      */
-    public void richTapVibratorOn(long millis) {
-        runOnRichTapService("Failed to execute vibratorOn", service -> {
+    public boolean richTapVibratorOn(long millis) {
+        return callRichTapService("Failed to execute vibratorOn", service -> {
             if (DEBUG) Slog.d(TAG, "Executing vibratorOn");
             service.on((int) millis, mCallback);
-        });
+            return 1;
+        }) > 0;
     }
 
     /**
@@ -154,13 +160,15 @@ public class RichTapVibratorService {
      * @param pattern   The pattern array
      * @param amplitude The amplitude value
      * @param freq      The frequency value
+     * @return true if successful, false otherwise
      */
-    public void richTapVibratorOnRawPattern(@NonNull int[] pattern, int amplitude, int freq) {
-        runOnRichTapService("Failed to execute raw pattern", service -> {
+    public boolean richTapVibratorOnRawPattern(@NonNull int[] pattern, int amplitude, int freq) {
+        return callRichTapService("Failed to execute raw pattern", service -> {
             if (DEBUG) Slog.d(TAG, "Executing raw pattern with amplitude: " +
                     amplitude + ", freq: " + freq);
             service.performHe(1, 0, amplitude, freq, pattern, mCallback);
-        });
+            return 1;
+        }) > 0;
     }
 
     /**
@@ -236,24 +244,6 @@ public class RichTapVibratorService {
     }
 
     /**
-     * Sets the vibration mode.
-     *
-     * @param mode The vibration mode
-     */
-    public void richTapSetVibrationMode(int mode) {
-        if (DEBUG) Slog.i(TAG, "Setting vibration mode: " + mode);
-
-        // Stop all vibrations first
-        richTapVibratorStop();
-
-        int[] param = new int[]{
-                HapticParamType.HAPTIC_DRC.getValue(),
-                mode
-        };
-        setHapticParam(param, param.length);
-    }
-
-    /**
      * Performs a predefined effect with the specified ID and scale.
      *
      * @param id    The effect ID
@@ -299,6 +289,11 @@ public class RichTapVibratorService {
             int[] param = parameter.getParam();
             int length = parameter.getLength();
 
+            if (param == null || length <= 0 || length != param.length || length > 256) {
+                Slog.e(TAG, "Invalid HapticParameter payload, length: " + length);
+                return true;
+            }
+
             if (DEBUG) {
                 Slog.d(TAG, "Processing HapticParameter: " + parameter);
             }
@@ -320,7 +315,7 @@ public class RichTapVibratorService {
      */
     public boolean checkIfRichTapEffect(VibrationEffect effect, String reason) {
         if (reason != null && reason.equals(HapticPlayer.VIBRATE_REASON)) {
-            return false;
+            return true;
         }
 
         return (effect instanceof PatternHeParameter
@@ -336,23 +331,6 @@ public class RichTapVibratorService {
     void resetHalServiceProxy() {
         synchronized (this) {
             mRichTapVibratorService = null;
-        }
-    }
-
-    /**
-     * Haptic parameter types enum.
-     */
-    public enum HapticParamType {
-        HAPTIC_DRC(0x01);
-
-        private final int type;
-
-        HapticParamType(int type) {
-            this.type = type;
-        }
-
-        public int getValue() {
-            return type;
         }
     }
 

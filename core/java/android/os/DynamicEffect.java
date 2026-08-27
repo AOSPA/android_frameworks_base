@@ -22,6 +22,8 @@ import android.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.util.Objects;
+
 /**
  * A DynamicEffect describes a haptic effect to be performed by a {@link Vibrator}.
  * <p>
@@ -54,9 +56,8 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
      * @hide
      */
     public DynamicEffect(@NonNull Parcel in) {
-        // The current implementation doesn't read anything from the parcel
-        // This constructor is kept for compatibility
-        mPatternJson = "";
+        String json = in.readString();
+        mPatternJson = json != null ? json : "";
     }
 
     /**
@@ -96,7 +97,7 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
 
     @Override
     public VibrationEffect applyRepeatingIndefinitely(boolean wantRepeating, int loopDelayMs) {
-        return null;
+        return this;
     }
 
     @Override
@@ -119,6 +120,8 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
      * @return This effect instance
      * @hide
      */
+    @NonNull
+    @Override
     public DynamicEffect resolve(int defaultAmplitude) {
         return this;
     }
@@ -146,7 +149,12 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
 
     @Override
     public void validate() {
-        // No validation implemented in the current version
+        if (TextUtils.isEmpty(mPatternJson)) {
+            throw new IllegalArgumentException("pattern JSON must not be empty");
+        }
+        if (mPatternJson.length() > 65536) {
+            throw new IllegalArgumentException("pattern JSON exceeds maximum allowed size (64KB)");
+        }
     }
 
     @Override
@@ -154,16 +162,12 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
         if (!(o instanceof DynamicEffect other)) {
             return false;
         }
-        return TextUtils.equals(mPatternJson, other.mPatternJson);
+        return Objects.equals(mPatternJson, other.mPatternJson);
     }
 
     @Override
     public int hashCode() {
-        int result = 17;
-        if (mPatternJson != null) {
-            result += 37 * mPatternJson.hashCode();
-        }
-        return result;
+        return Objects.hashCode(mPatternJson);
     }
 
     @Override
@@ -178,7 +182,7 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
 
     @Override
     public String toDebugString() {
-        return null;
+        return toString();
     }
 
     @Override
@@ -192,7 +196,7 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
      */
     @Override
     public VibrationEffect applyAdaptiveScale(float scaleFactor) {
-        return null;
+        return this;
     }
 
     /**
@@ -200,6 +204,6 @@ public final class DynamicEffect extends VibrationEffect implements Parcelable {
      */
     @Override
     public VibrationEffect applyEffectStrength(int effectStrength) {
-        return null;
+        return this;
     }
 }

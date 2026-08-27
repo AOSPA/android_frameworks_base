@@ -20,6 +20,7 @@ package android.os;
 import android.annotation.NonNull;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Implementation of an envelope vibration effect.
@@ -82,7 +83,7 @@ public final class Envelope extends VibrationEffect implements Parcelable {
      * @return The relative time array
      */
     public @NonNull int[] getRelativeTimeArr() {
-        return this.relativeTimeArr;
+        return Arrays.copyOf(this.relativeTimeArr, 4);
     }
 
     /**
@@ -91,7 +92,7 @@ public final class Envelope extends VibrationEffect implements Parcelable {
      * @return The scale array
      */
     public @NonNull int[] getScaleArr() {
-        return this.scaleArr;
+        return Arrays.copyOf(this.scaleArr, 4);
     }
 
     /**
@@ -100,7 +101,7 @@ public final class Envelope extends VibrationEffect implements Parcelable {
      * @return The frequency array
      */
     public @NonNull int[] getFreqArr() {
-        return this.freqArr;
+        return Arrays.copyOf(this.freqArr, 4);
     }
 
     /**
@@ -153,7 +154,7 @@ public final class Envelope extends VibrationEffect implements Parcelable {
 
     @Override
     public VibrationEffect applyRepeatingIndefinitely(boolean wantRepeating, int loopDelayMs) {
-        return null;
+        return this;
     }
 
     @Override
@@ -224,7 +225,11 @@ public final class Envelope extends VibrationEffect implements Parcelable {
 
     @Override
     public int hashCode() {
-        return relativeTimeArr[2] + scaleArr[2] + freqArr[2];
+        int result = Objects.hash(steepMode, amplitude);
+        result = 31 * result + Arrays.hashCode(relativeTimeArr);
+        result = 31 * result + Arrays.hashCode(scaleArr);
+        result = 31 * result + Arrays.hashCode(freqArr);
+        return result;
     }
 
     @Override
@@ -238,7 +243,7 @@ public final class Envelope extends VibrationEffect implements Parcelable {
 
     @Override
     public String toDebugString() {
-        return null;
+        return toString();
     }
 
     @Override
@@ -253,11 +258,11 @@ public final class Envelope extends VibrationEffect implements Parcelable {
 
     @Override
     public VibrationEffect applyAdaptiveScale(float scaleFactor) {
-        return null;
+        return this;
     }
 
     @Override
     public VibrationEffect applyEffectStrength(int effectStrength) {
-        return null;
+        return this;
     }
 }

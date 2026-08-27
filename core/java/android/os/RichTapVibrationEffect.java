@@ -20,7 +20,6 @@ package android.os;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.res.Resources;
-import android.os.VibrationEffect;
 import android.util.Log;
 import android.util.Slog;
 
@@ -47,6 +46,7 @@ public final class RichTapVibrationEffect {
     private static final String TAG = RichTapVibrationEffect.class.getSimpleName();
 
     // Parcel tokens for different effect types
+    static final int PARCEL_TOKEN_DYNAMIC_EFFECT = 100;
     static final int PARCEL_TOKEN_EXT_PREBAKED = 501;
     static final int PARCEL_TOKEN_ENVELOPE = 502;
     static final int PARCEL_TOKEN_PATTERN_HE = 503;
@@ -244,7 +244,12 @@ public final class RichTapVibrationEffect {
         }
     }
 
+    private static final long PREBAKED_HE_MAX_FILE_SIZE = 64 * 1024; // 64 KB
+
     private static String readHeFile(File file) throws Exception {
+        if (file.length() > PREBAKED_HE_MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("HE resource file exceeds size limit: " + file);
+        }
         StringBuilder content = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(file), StandardCharsets.UTF_8))) {
@@ -411,6 +416,7 @@ public final class RichTapVibrationEffect {
      */
     public static boolean isExtendedEffect(int token) {
         switch (token) {
+            case PARCEL_TOKEN_DYNAMIC_EFFECT:
             case PARCEL_TOKEN_EXT_PREBAKED:
             case PARCEL_TOKEN_ENVELOPE:
             case PARCEL_TOKEN_PATTERN_HE_LOOP_PARAMETER:
@@ -448,6 +454,8 @@ public final class RichTapVibrationEffect {
                     Log.d(TAG, "read token: " + token + "!");
 
                     switch (token) {
+                        case PARCEL_TOKEN_DYNAMIC_EFFECT:
+                            return new DynamicEffect(in);
                         case PARCEL_TOKEN_EXT_PREBAKED:
                             return new ExtPrebaked(in);
                         case PARCEL_TOKEN_ENVELOPE:

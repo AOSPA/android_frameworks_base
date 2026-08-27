@@ -76,13 +76,12 @@ public class HapticPlayer {
     private static final String TAG = HapticPlayer.class.getSimpleName();
     private static final int MAX_EVENT_COUNT = 16;
     private static final int MAX_POINT_COUNT = 16;
-    private static final boolean mAvailable = isSupportRichtap();
     private static final ExecutorService mExcutor = Executors.newSingleThreadExecutor();
     private static final AtomicInteger mSeq = new AtomicInteger();
     private final VibratorManager mVibratorManager;
     private final String mPackageName;
-    private final boolean DEBUG = true;
-    private boolean mStarted;
+    private final boolean DEBUG = false;
+    private volatile boolean mStarted;
     private DynamicEffect mEffect;
 
     /**
@@ -106,22 +105,12 @@ public class HapticPlayer {
     }
 
     /**
-     * Checks if RichTap vibration is supported on this device.
-     *
-     * @return true if supported, false otherwise
-     */
-    private static boolean isSupportRichtap() {
-        int support = RichTapVibrationEffect.checkIfRichTapSupport();
-        return support != Vibrator.VIBRATION_EFFECT_SUPPORT_NO;
-    }
-
-    /**
      * Checks if RichTap vibration is available.
      *
      * @return true if available, false otherwise
      */
     public static boolean isAvailable() {
-        return mAvailable;
+        return RichTapVibrationEffect.isSupported();
     }
 
     /**
@@ -717,7 +706,7 @@ public class HapticPlayer {
             JSONObject hapticObject = new JSONObject(patternString);
 
             int heVersion = 0;
-            if (mAvailable) {
+            if (hapticObject.has(HE_META_DATA_KEY)) {
                 JSONObject metaData = hapticObject.getJSONObject(HE_META_DATA_KEY);
                 heVersion = metaData.getInt(HE_VERSION_KEY);
             }
@@ -788,36 +777,7 @@ public class HapticPlayer {
      * @param loop The loop count
      */
     public void start(final int loop) {
-        Log.d(TAG, "Starting playback - loop: " + loop);
-
-        if (mEffect == null) {
-            Log.e(TAG, "Effect is null, cannot start playback");
-            return;
-        }
-
-        final int realLooper = getRealLooper(loop);
-        if (realLooper < 0) {
-            Log.e(TAG, "Invalid loop value: " + loop + " (resolved to " + realLooper + ")");
-            return;
-        }
-
-        mExcutor.execute(() -> {
-            Log.d(TAG, "Starting haptic playback");
-            long startRunTime = System.currentTimeMillis();
-            try {
-                mStarted = true;
-                String patternJson = mEffect.getPatternInfo();
-                if (patternJson == null) {
-                    Log.e(TAG, "Pattern is null, cannot play effect");
-                    return;
-                }
-                applyPatternHeWithString(patternJson, realLooper, 0, 255, 0);
-            } catch (Exception e) {
-                Log.e(TAG, "Error during haptic playback: " + e.getMessage(), e);
-            }
-            long useTime = System.currentTimeMillis() - startRunTime;
-            Log.d(TAG, "Haptic playback processing took " + useTime + "ms");
-        });
+        start(loop, 0, 255, 0);
     }
 
     /**
@@ -829,44 +789,7 @@ public class HapticPlayer {
      * @param amplitude The amplitude value (1-255)
      */
     public void start(final int loop, final int interval, final int amplitude) {
-        Log.d(TAG, "Starting playback - loop: " + loop +
-                ", interval: " + interval + ", amplitude: " + amplitude);
-
-        boolean checkResult = checkParam(interval, amplitude, -1);
-
-        if (!checkResult) {
-            Log.e(TAG, "Invalid parameters for playback");
-            return;
-        }
-
-        if (mEffect == null) {
-            Log.e(TAG, "Effect is null, cannot start playback");
-            return;
-        }
-
-        final int realLooper = getRealLooper(loop);
-        if (realLooper < 0) {
-            Log.e(TAG, "Invalid loop value: " + loop + " (resolved to " + realLooper + ")");
-            return;
-        }
-
-        mExcutor.execute(() -> {
-            Log.d(TAG, "Starting haptic playback");
-            long startRunTime = System.currentTimeMillis();
-            try {
-                mStarted = true;
-                String patternJson = mEffect.getPatternInfo();
-                if (patternJson == null) {
-                    Log.e(TAG, "Pattern is null, cannot play effect");
-                    return;
-                }
-                applyPatternHeWithString(patternJson, realLooper, interval, amplitude, 0);
-            } catch (Exception e) {
-                Log.e(TAG, "Error during haptic playback: " + e.getMessage(), e);
-            }
-            long useTime = System.currentTimeMillis() - startRunTime;
-            Log.d(TAG, "Haptic playback processing took " + useTime + "ms");
-        });
+        start(loop, interval, amplitude, 0);
     }
 
     /**
@@ -879,9 +802,11 @@ public class HapticPlayer {
      * @param freq      The frequency value
      */
     public void start(final int loop, final int interval, final int amplitude, final int freq) {
-        Log.d(TAG, "Starting playback - loop: " + loop +
-                ", interval: " + interval + ", amplitude: " + amplitude +
-                ", freq: " + freq);
+        if (DEBUG) {
+            Log.d(TAG, "Starting playback - loop: " + loop +
+                    ", interval: " + interval + ", amplitude: " + amplitude +
+                    ", freq: " + freq);
+        }
 
         boolean checkResult = checkParam(interval, amplitude, freq);
 
@@ -902,8 +827,7 @@ public class HapticPlayer {
         }
 
         mExcutor.execute(() -> {
-            Log.d(TAG, "Starting haptic playback");
-            long startRunTime = System.currentTimeMillis();
+            if (DEBUG) Log.d(TAG, "Starting haptic playback");
             try {
                 mStarted = true;
                 String patternJson = mEffect.getPatternInfo();
@@ -915,8 +839,6 @@ public class HapticPlayer {
             } catch (Exception e) {
                 Log.e(TAG, "Error during haptic playback: " + e.getMessage(), e);
             }
-            long useTime = System.currentTimeMillis() - startRunTime;
-            Log.d(TAG, "Haptic playback processing took " + useTime + "ms");
         });
     }
 
@@ -963,12 +885,11 @@ public class HapticPlayer {
             return;
         }
 
-        if (!mStarted) {
-            Log.d(TAG, "Haptic player has not started");
-            return;
-        }
-
         mExcutor.execute(() -> {
+            if (!mStarted) {
+                Log.d(TAG, "Haptic player has not started");
+                return;
+            }
             try {
                 VibrationEffect createPatternHe = RichTapVibrationEffect.createPatternHeParameter(
                         interval, amplitude, freq);
@@ -1025,24 +946,24 @@ public class HapticPlayer {
      */
     public void stop() {
         Log.d(TAG, "Stopping playback");
-
-        if (mStarted) {
-            mExcutor.execute(() -> {
-                try {
-                    VibrationEffect createPatternHe =
-                            RichTapVibrationEffect.createPatternHeParameter(0, 0, 0);
-                    CombinedVibration combinedEffect =
-                            CombinedVibration.createParallel(createPatternHe);
-                    mVibratorManager.vibrate(Process.myUid(), mPackageName,
-                            combinedEffect, VIBRATE_REASON, null);
-                    Log.d(TAG, "Playback stopped successfully");
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to stop playback: " + e.getMessage(), e);
-                }
-            });
-        } else {
-            Log.w(TAG, "Nothing to stop - playback not started");
-        }
+        mExcutor.execute(() -> {
+            if (!mStarted) {
+                Log.w(TAG, "Nothing to stop - playback not started");
+                return;
+            }
+            mStarted = false;
+            try {
+                VibrationEffect createPatternHe =
+                        RichTapVibrationEffect.createPatternHeParameter(0, 0, 0);
+                CombinedVibration combinedEffect =
+                        CombinedVibration.createParallel(createPatternHe);
+                mVibratorManager.vibrate(Process.myUid(), mPackageName,
+                        combinedEffect, VIBRATE_REASON, null);
+                Log.d(TAG, "Playback stopped successfully");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to stop playback: " + e.getMessage(), e);
+            }
+        });
     }
 
     /**
