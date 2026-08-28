@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50d42613_235310af",
+        "filename": "packages/SystemUI/src/com/android/systemui/LauncherProxyService.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1000468
+      },
+      "writtenOn": "2026-08-28T19:34:28Z",
+      "side": 1,
+      "message": "just switch to verifyCallerAndClearCallingIdentityPostMain",
+      "revId": "2e021588ba5752dbcdd87647e4920149acd77c13",
+      "serverId": "3162e3d8-d894-470e-abd9-724f7b0effad"
+    }
+  ]
+}
