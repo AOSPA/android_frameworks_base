@@ -140,13 +140,6 @@
 
     <!-- secure -->
 
-    <com.android.systemui.tuner.ClockPreference
-        android:key="clock"
-        android:icon="@drawable/ic_statusbar_clock"
-        android:title="@string/tuner_time"
-        android:summary="%s"
-        android:entries="@array/clock_options" />
-
     <com.android.systemui.tuner.TunerSwitch
         android:icon="@drawable/ic_statusbar_priority"
         android:key="low_priority"
