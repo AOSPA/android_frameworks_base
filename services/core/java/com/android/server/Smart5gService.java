@@ -35,6 +35,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.TetheringManager;
 import android.net.TrafficStats;
+import android.os.DeadSystemRuntimeException;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.PowerManager;
@@ -96,6 +97,7 @@ public class Smart5gService extends SystemService {
     private int mDefaultNetworkState = DEFAULT_NETWORK_NONE;
     private int[] mActiveSubIds = new int[0];
     private int mActiveDataSubId = INVALID_SUBSCRIPTION_ID;
+    private boolean mHasActiveDataSubIdCallback;
     private Network mDefaultNetwork;
     private long mLastMobileBytes;
     private long mLastTrafficSampleElapsed;
@@ -127,7 +129,10 @@ public class Smart5gService extends SystemService {
                     reevaluate();
                     break;
                 case ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED:
-                    updateActiveDataSubId(INVALID_SUBSCRIPTION_ID);
+                    refreshActiveDataSubIdFromFallback();
+                    break;
+                case Intent.ACTION_USER_SWITCHED:
+                    reevaluate();
                     break;
                 default:
                     Slog.e(TAG, "Unhandled intent: " + action);
@@ -274,6 +279,7 @@ public class Smart5gService extends SystemService {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
         filter.addAction(ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        filter.addAction(Intent.ACTION_USER_SWITCHED);
         mContext.registerReceiver(mIntentReceiver, filter, null, mHandler);
 
         mConnectivityManager.registerSystemDefaultNetworkCallback(
@@ -282,7 +288,8 @@ public class Smart5gService extends SystemService {
         try {
             mTelephonyManager.registerTelephonyCallback(
                     mHandlerExecutor, mActiveDataSubscriptionCallback);
-        } catch (SecurityException | IllegalStateException | NullPointerException e) {
+        } catch (SecurityException | IllegalStateException | NullPointerException
+                | DeadSystemRuntimeException e) {
             Slog.w(TAG, "Unable to monitor active data subscription", e);
         }
         if (mTetheringManager != null) {
@@ -312,7 +319,7 @@ public class Smart5gService extends SystemService {
         final int[] subscriptions = mSubManager.getActiveSubscriptionIdList();
         final int[] newSubIds = subscriptions != null ? subscriptions : new int[0];
         if (Arrays.equals(newSubIds, mActiveSubIds)) {
-            updateActiveDataSubId(mActiveDataSubId);
+            refreshActiveDataSubIdFromFallback();
             return;
         }
 
@@ -331,7 +338,7 @@ public class Smart5gService extends SystemService {
                     mSettingObserver, UserHandle.USER_ALL);
             registerCallStateCallback(subId);
         }
-        updateActiveDataSubId(mActiveDataSubId);
+        refreshActiveDataSubIdFromFallback();
     }
 
     private void registerCallStateCallback(int subId) {
@@ -340,7 +347,8 @@ public class Smart5gService extends SystemService {
             final CallStateCallback callback = new CallStateCallback(subId, tm);
             mCallStateCallbacks.put(subId, callback);
             tm.registerTelephonyCallback(mHandlerExecutor, callback);
-        } catch (SecurityException | IllegalStateException | NullPointerException e) {
+        } catch (SecurityException | IllegalStateException | NullPointerException
+                | DeadSystemRuntimeException e) {
             Slog.w(TAG, "Unable to monitor call state for subId " + subId, e);
         }
     }
@@ -349,17 +357,29 @@ public class Smart5gService extends SystemService {
         for (CallStateCallback callback : mCallStateCallbacks.values()) {
             try {
                 callback.mTelephonyManager.unregisterTelephonyCallback(callback);
-            } catch (SecurityException | IllegalStateException | NullPointerException e) {
+            } catch (SecurityException | IllegalStateException | NullPointerException
+                    | DeadSystemRuntimeException e) {
                 Slog.w(TAG, "Unable to unregister call state callback", e);
             }
         }
         mCallStateCallbacks.clear();
     }
 
-    private void updateActiveDataSubId(int callbackSubId) {
-        final int fallbackSubId = SubscriptionManager.getDefaultDataSubscriptionId();
-        final int activeDataSubId = SubscriptionManager.isValidSubscriptionId(callbackSubId)
-                ? callbackSubId : fallbackSubId;
+    private void handleActiveDataSubIdChanged(int callbackSubId) {
+        mHasActiveDataSubIdCallback = SubscriptionManager.isValidSubscriptionId(callbackSubId);
+        setActiveDataSubId(mHasActiveDataSubIdCallback
+                ? callbackSubId : SubscriptionManager.getDefaultDataSubscriptionId());
+    }
+
+    private void refreshActiveDataSubIdFromFallback() {
+        if (!mHasActiveDataSubIdCallback) {
+            setActiveDataSubId(SubscriptionManager.getDefaultDataSubscriptionId());
+        } else {
+            reevaluate();
+        }
+    }
+
+    private void setActiveDataSubId(int activeDataSubId) {
         if (activeDataSubId != mActiveDataSubId) {
             dlog("Active data subId changed from " + mActiveDataSubId + " to " + activeDataSubId);
             cancelPendingDisable(mActiveDataSubId);
@@ -509,7 +529,8 @@ public class Smart5gService extends SystemService {
             }
             tm.setAllowedNetworkTypesForReason(ALLOWED_NETWORK_TYPES_REASON_POWER, updatedTypes);
             dlog((allowed ? "Enabled" : "Disabled") + " 5G for subId " + subId);
-        } catch (SecurityException | IllegalStateException | NullPointerException e) {
+        } catch (SecurityException | IllegalStateException | NullPointerException
+                | DeadSystemRuntimeException e) {
             Slog.w(TAG, "Unable to update 5G policy for subId " + subId, e);
         }
     }
@@ -562,7 +583,7 @@ public class Smart5gService extends SystemService {
             TelephonyCallback.ActiveDataSubscriptionIdListener {
         @Override
         public void onActiveDataSubscriptionIdChanged(int subId) {
-            updateActiveDataSubId(subId);
+            handleActiveDataSubIdChanged(subId);
         }
     }
 
