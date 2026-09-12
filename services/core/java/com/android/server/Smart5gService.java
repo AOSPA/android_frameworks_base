@@ -33,6 +33,7 @@ import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.TetheringManager;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.PowerManager;
@@ -45,6 +46,9 @@ import android.telephony.TelephonyManager;
 import android.util.Slog;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /* Not smart enough yet, but we're getting there */
@@ -56,20 +60,24 @@ public class Smart5gService extends SystemService {
     private static final int DEFAULT_NETWORK_NONE = 0;
     private static final int DEFAULT_NETWORK_CELLULAR = 1;
     private static final int DEFAULT_NETWORK_NON_CELLULAR = 2;
+    private static final int CALL_STATE_UNINITIALIZED = -1;
 
     private final Context mContext;
     private final ServiceThread mHandlerThread;
     private final Handler mHandler;
     private final Executor mHandlerExecutor;
+    private final Map<Integer, CallStateCallback> mCallStateCallbacks = new HashMap<>();
 
     private TelephonyManager mTelephonyManager;
     private SubscriptionManager mSubManager;
     private ConnectivityManager mConnectivityManager;
+    private TetheringManager mTetheringManager;
     private PowerManager mPowerManager;
 
     private boolean mIsInteractive;
     private boolean mIsDeviceIdleMode;
     private boolean mIsPowerSaveMode;
+    private boolean mIsTetheringActive;
     private int mDefaultNetworkState = DEFAULT_NETWORK_NONE;
     private int[] mActiveSubIds = new int[0];
     private int mActiveDataSubId = INVALID_SUBSCRIPTION_ID;
@@ -138,6 +146,19 @@ public class Smart5gService extends SystemService {
     private final ActiveDataSubscriptionCallback mActiveDataSubscriptionCallback =
             new ActiveDataSubscriptionCallback();
 
+    private final TetheringManager.TetheringEventCallback mTetheringEventCallback =
+            new TetheringManager.TetheringEventCallback() {
+        @Override
+        public void onTetheredInterfacesChanged(List<String> interfaces) {
+            final boolean active = !interfaces.isEmpty();
+            if (active != mIsTetheringActive) {
+                mIsTetheringActive = active;
+                dlog("Tethering active: " + active);
+                update();
+            }
+        }
+    };
+
     private final SubscriptionManager.OnSubscriptionsChangedListener mSubListener =
             new SubscriptionManager.OnSubscriptionsChangedListener() {
         @Override
@@ -148,6 +169,7 @@ public class Smart5gService extends SystemService {
                 dlog("active subs changed, was: " + Arrays.toString(mActiveSubIds)
                         + ", now: " + Arrays.toString(subs));
                 // re-register content observers
+                unregisterCallStateCallbacks();
                 mContext.getContentResolver().unregisterContentObserver(mSettingObserver);
                 for (int subId : subs) {
                     dlog("registering content observer for subId " + subId);
@@ -157,6 +179,7 @@ public class Smart5gService extends SystemService {
                     mContext.getContentResolver().registerContentObserver(
                             Settings.Global.getUriFor(MOBILE_DATA + subId), false, mSettingObserver,
                             UserHandle.USER_ALL);
+                    registerCallStateCallback(subId);
                 }
                 mActiveSubIds = subs;
                 update();
@@ -194,6 +217,7 @@ public class Smart5gService extends SystemService {
                 mTelephonyManager = mContext.getSystemService(TelephonyManager.class);
                 mSubManager = mContext.getSystemService(SubscriptionManager.class);
                 mConnectivityManager = mContext.getSystemService(ConnectivityManager.class);
+                mTetheringManager = mContext.getSystemService(TetheringManager.class);
                 mPowerManager = mContext.getSystemService(PowerManager.class);
             });
         } else if (phase == SystemService.PHASE_BOOT_COMPLETED) {
@@ -214,8 +238,34 @@ public class Smart5gService extends SystemService {
                 mSubManager.addOnSubscriptionsChangedListener(mHandlerExecutor, mSubListener);
                 mTelephonyManager.registerTelephonyCallback(
                         mHandlerExecutor, mActiveDataSubscriptionCallback);
+                if (mTetheringManager != null) {
+                    mTetheringManager.registerTetheringEventCallback(
+                            mHandlerExecutor, mTetheringEventCallback);
+                }
             });
         }
+    }
+
+    private void registerCallStateCallback(int subId) {
+        try {
+            final TelephonyManager tm = mTelephonyManager.createForSubscriptionId(subId);
+            final CallStateCallback callback = new CallStateCallback(subId, tm);
+            mCallStateCallbacks.put(subId, callback);
+            tm.registerTelephonyCallback(mHandlerExecutor, callback);
+        } catch (SecurityException | IllegalStateException | NullPointerException e) {
+            Slog.w(TAG, "Unable to monitor call state for subId " + subId, e);
+        }
+    }
+
+    private void unregisterCallStateCallbacks() {
+        for (CallStateCallback callback : mCallStateCallbacks.values()) {
+            try {
+                callback.mTelephonyManager.unregisterTelephonyCallback(callback);
+            } catch (SecurityException | IllegalStateException | NullPointerException e) {
+                Slog.w(TAG, "Unable to unregister call state callback", e);
+            }
+        }
+        mCallStateCallbacks.clear();
     }
 
     private void updateDefaultNetworkState(Network network, NetworkCapabilities caps) {
@@ -270,6 +320,10 @@ public class Smart5gService extends SystemService {
             dlog("update: return, no active subs!");
             return;
         }
+        if (hasActiveOrUninitializedCall()) {
+            dlog("Holding radio policy while call state is active or uninitialized");
+            return;
+        }
         for (int subId : mActiveSubIds) {
             try {
                 final TelephonyManager tm = mTelephonyManager.createForSubscriptionId(subId);
@@ -307,6 +361,9 @@ public class Smart5gService extends SystemService {
             dlog("shouldDisable5g: mobile data is disabled for subId " + subId);
             return true;
         }
+        if (mIsTetheringActive && subId == getActiveDataSubId()) {
+            return false;
+        }
         dlog("shouldDisable5g: subId=" + subId + " mIsPowerSaveMode=" + mIsPowerSaveMode
                 + " mDefaultNetworkState=" + mDefaultNetworkState + " mActiveDataSubId="
                 + getActiveDataSubId());
@@ -319,11 +376,48 @@ public class Smart5gService extends SystemService {
                         && subId != getActiveDataSubId());
     }
 
+    private boolean hasActiveOrUninitializedCall() {
+        for (int subId : mActiveSubIds) {
+            final CallStateCallback callback = mCallStateCallbacks.get(subId);
+            if (callback == null || callback.mCallState != TelephonyManager.CALL_STATE_IDLE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private final class ActiveDataSubscriptionCallback extends TelephonyCallback implements
             TelephonyCallback.ActiveDataSubscriptionIdListener {
         @Override
         public void onActiveDataSubscriptionIdChanged(int subId) {
             updateActiveDataSubId(subId);
+        }
+    }
+
+    private final class CallStateCallback extends TelephonyCallback implements
+            TelephonyCallback.CallStateListener, TelephonyCallback.DataEnabledListener {
+        private final int mSubId;
+        private final TelephonyManager mTelephonyManager;
+        private int mCallState = CALL_STATE_UNINITIALIZED;
+
+        CallStateCallback(int subId, TelephonyManager telephonyManager) {
+            mSubId = subId;
+            mTelephonyManager = telephonyManager;
+        }
+
+        @Override
+        public void onCallStateChanged(int state) {
+            if (state != mCallState) {
+                mCallState = state;
+                dlog("Call state changed for subId " + mSubId + ": " + state);
+                update();
+            }
+        }
+
+        @Override
+        public void onDataEnabledChanged(boolean enabled, int reason) {
+            dlog("Data enabled changed for subId " + mSubId + ": " + enabled);
+            update();
         }
     }
 
