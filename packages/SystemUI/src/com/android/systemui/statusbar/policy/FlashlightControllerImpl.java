@@ -38,8 +38,6 @@ import com.android.systemui.util.settings.SecureSettings;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -178,9 +176,6 @@ public class FlashlightControllerImpl implements FlashlightController {
     @WorkerThread
     private String getCameraId() throws CameraAccessException {
         String[] ids = mCameraManager.getCameraIdList();
-        // On devices where multiple cameras share a single flash unit, the HAL routes torch
-        // through the logical multi-camera, so try those first.
-        Arrays.sort(ids, Comparator.comparing(this::isLogicalCamera).reversed());
         for (String id : ids) {
             CameraCharacteristics c = mCameraManager.getCameraCharacteristics(id);
             Boolean flashAvailable = c.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
@@ -191,17 +186,6 @@ public class FlashlightControllerImpl implements FlashlightController {
             }
         }
         return null;
-    }
-
-    /**
-     * Returns whether {@code id} is a logical multi-camera, i.e. it has physical camera ids.
-     */
-    private boolean isLogicalCamera(String id) {
-        try {
-            return !mCameraManager.getCameraCharacteristics(id).getPhysicalCameraIds().isEmpty();
-        } catch (CameraAccessException e) {
-            return false;
-        }
     }
 
     private void dispatchModeChanged(boolean enabled) {

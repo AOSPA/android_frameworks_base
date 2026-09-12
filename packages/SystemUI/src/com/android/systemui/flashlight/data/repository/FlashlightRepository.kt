@@ -193,7 +193,7 @@ constructor(
      * @throws CameraAccessException if the camera device have been disconnected
      */
     private suspend fun loadFlashlightInfo(): String? =
-        sortedCameraIds().firstOrNull { id ->
+        cameraManager.cameraIdList.firstOrNull { id ->
             val cc: CameraCharacteristics = cameraManager.getCameraCharacteristics(id)
 
             val flashAvailable = cc.get(CameraCharacteristics.FLASH_INFO_AVAILABLE)
@@ -215,15 +215,6 @@ constructor(
             }
 
             backFlashlightAvailable
-        }
-
-    /**
-     * Sorts camera ids so a logical multi-camera comes first. On devices where multiple
-     * cameras share a single flash unit, the HAL routes torch through the logical camera.
-     */
-    private fun sortedCameraIds(): List<String> =
-        cameraManager.cameraIdList.sortedByDescending { id ->
-            cameraManager.getCameraCharacteristics(id).physicalCameraIds.isNotEmpty()
         }
 
     /**
