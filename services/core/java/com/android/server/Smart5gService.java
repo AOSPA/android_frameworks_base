@@ -24,11 +24,15 @@ import static android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID;
 import static android.telephony.TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED;
 import static android.telephony.TelephonyManager.ALLOWED_NETWORK_TYPES_REASON_POWER;
 
+import android.app.ActivityManager;
+import android.app.UidObserver;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -40,6 +44,7 @@ import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.PowerManager;
 import android.os.Process;
+import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.UserHandle;
 import android.provider.Settings;
@@ -51,8 +56,10 @@ import android.util.SparseArray;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /* Not smart enough yet, but we're getting there */
@@ -81,6 +88,8 @@ public class Smart5gService extends SystemService {
     private final Executor mHandlerExecutor;
     private final SparseArray<Runnable> mPendingDisableRunnables = new SparseArray<>();
     private final Map<Integer, CallStateCallback> mCallStateCallbacks = new HashMap<>();
+    private final Map<String, Boolean> mGamePackageCache = new HashMap<>();
+    private final Set<Integer> mForegroundGameUids = new HashSet<>();
 
     private TelephonyManager mTelephonyManager;
     private SubscriptionManager mSubManager;
@@ -92,6 +101,7 @@ public class Smart5gService extends SystemService {
     private boolean mIsDeviceIdleMode;
     private boolean mIsPowerSaveMode;
     private boolean mIsTetheringActive;
+    private boolean mIsGameActive;
     private boolean mIsHighTraffic = true;
     private boolean mIsTrafficMonitoring;
     private int mDefaultNetworkState = DEFAULT_NETWORK_NONE;
@@ -178,6 +188,27 @@ public class Smart5gService extends SystemService {
 
     private final ActiveDataSubscriptionCallback mActiveDataSubscriptionCallback =
             new ActiveDataSubscriptionCallback();
+
+    private final UidObserver mUidObserver = new UidObserver() {
+        @Override
+        public void onUidStateChanged(int uid, int procState, long procStateSeq, int capability) {
+            mHandler.post(() -> handleUidStateChanged(uid, procState));
+        }
+
+        @Override
+        public void onUidGone(int uid, boolean disabled) {
+            mHandler.post(() -> handleUidGone(uid));
+        }
+    };
+
+    private final BroadcastReceiver mPackageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getData() != null) {
+                mGamePackageCache.remove(intent.getData().getSchemeSpecificPart());
+            }
+        }
+    };
 
     private final TetheringManager.TetheringEventCallback mTetheringEventCallback =
             new TetheringManager.TetheringEventCallback() {
@@ -296,7 +327,93 @@ public class Smart5gService extends SystemService {
             mTetheringManager.registerTetheringEventCallback(
                     mHandlerExecutor, mTetheringEventCallback);
         }
+        try {
+            ActivityManager.getService().registerUidObserver(mUidObserver,
+                    ActivityManager.UID_OBSERVER_PROCSTATE | ActivityManager.UID_OBSERVER_GONE,
+                    ActivityManager.PROCESS_STATE_TOP, null);
+            seedForegroundGameUids();
+        } catch (RemoteException e) {
+            Slog.w(TAG, "Unable to monitor foreground games", e);
+        }
+        final IntentFilter packageFilter = new IntentFilter();
+        packageFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        packageFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+        packageFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        packageFilter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+        packageFilter.addDataScheme("package");
+        mContext.registerReceiverForAllUsers(mPackageReceiver, packageFilter, null, mHandler);
         updateSubscriptions();
+    }
+
+    private void handleUidStateChanged(int uid, int procState) {
+        if (procState == ActivityManager.PROCESS_STATE_TOP && isGameUid(uid)) {
+            mForegroundGameUids.add(uid);
+        } else {
+            mForegroundGameUids.remove(uid);
+        }
+        updateGameActiveState();
+    }
+
+    private void handleUidGone(int uid) {
+        mForegroundGameUids.remove(uid);
+        updateGameActiveState();
+    }
+
+    private void seedForegroundGameUids() throws RemoteException {
+        final List<ActivityManager.RunningAppProcessInfo> runningProcesses =
+                ActivityManager.getService().getRunningAppProcesses();
+        if (runningProcesses == null) {
+            return;
+        }
+        for (ActivityManager.RunningAppProcessInfo process : runningProcesses) {
+            if (process.processState == ActivityManager.PROCESS_STATE_TOP
+                    && isGameUid(process.uid)) {
+                mForegroundGameUids.add(process.uid);
+            }
+        }
+        updateGameActiveState();
+    }
+
+    private boolean isGameUid(int uid) {
+        final PackageManager packageManager = mContext.getPackageManager();
+        final String[] packages = packageManager.getPackagesForUid(uid);
+        if (packages == null) {
+            return false;
+        }
+        for (String packageName : packages) {
+            final Boolean cached = mGamePackageCache.get(packageName);
+            if (cached != null) {
+                if (cached) {
+                    return true;
+                }
+                continue;
+            }
+
+            boolean isGame = false;
+            try {
+                final ApplicationInfo appInfo = packageManager.getApplicationInfoAsUser(
+                        packageName, 0, UserHandle.getUserId(uid));
+                isGame = appInfo.category == ApplicationInfo.CATEGORY_GAME
+                        || (appInfo.flags & ApplicationInfo.FLAG_IS_GAME) != 0;
+                mGamePackageCache.put(packageName, isGame);
+            } catch (PackageManager.NameNotFoundException e) {
+                dlog("Unable to classify package " + packageName);
+            }
+            if (isGame) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void updateGameActiveState() {
+        final boolean isGameActive = !mForegroundGameUids.isEmpty();
+        if (isGameActive == mIsGameActive) {
+            return;
+        }
+        mIsGameActive = isGameActive;
+        dlog("Foreground game active: " + mIsGameActive);
+        reevaluate();
     }
 
     private void updateDefaultNetworkState(Network network, NetworkCapabilities caps) {
@@ -435,7 +552,6 @@ public class Smart5gService extends SystemService {
         if (!isEnabled(subId)) {
             return false;
         }
-
         final int activeDataSubId = getActiveDataSubId();
         if (SubscriptionManager.isValidSubscriptionId(activeDataSubId)
                 && subId != activeDataSubId) {
@@ -457,7 +573,7 @@ public class Smart5gService extends SystemService {
             return true;
         }
         if (mDefaultNetworkState == DEFAULT_NETWORK_CELLULAR) {
-            return !mIsHighTraffic;
+            return !mIsGameActive && !mIsHighTraffic;
         }
         return false;
     }
