@@ -33,7 +33,6 @@ import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.os.Handler;
 import android.os.HandlerExecutor;
 import android.os.PowerManager;
@@ -41,13 +40,11 @@ import android.os.Process;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.util.Slog;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 /* Not smart enough yet, but we're getting there */
@@ -56,12 +53,9 @@ public class Smart5gService extends SystemService {
     private static final String TAG = "Smart5gService";
     private static final boolean DEBUG = true;
 
-    private static final NetworkRequest INTERNET_NETWORK_REQUEST =
-            new NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
-            .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-            .build();
+    private static final int DEFAULT_NETWORK_NONE = 0;
+    private static final int DEFAULT_NETWORK_CELLULAR = 1;
+    private static final int DEFAULT_NETWORK_NON_CELLULAR = 2;
 
     private final Context mContext;
     private final ServiceThread mHandlerThread;
@@ -73,9 +67,13 @@ public class Smart5gService extends SystemService {
     private ConnectivityManager mConnectivityManager;
     private PowerManager mPowerManager;
 
-    private boolean mIsOnMobileData, mIsPowerSaveMode;
+    private boolean mIsInteractive;
+    private boolean mIsDeviceIdleMode;
+    private boolean mIsPowerSaveMode;
+    private int mDefaultNetworkState = DEFAULT_NETWORK_NONE;
     private int[] mActiveSubIds = new int[0];
-    private int mDefaultDataSubId = INVALID_SUBSCRIPTION_ID;
+    private int mActiveDataSubId = INVALID_SUBSCRIPTION_ID;
+    private Network mDefaultNetwork;
 
     private final ContentObserver mSettingObserver;
 
@@ -85,21 +83,24 @@ public class Smart5gService extends SystemService {
             final String action = intent.getAction();
             dlog("received intent: " + action);
             switch (action) {
+                case Intent.ACTION_SCREEN_ON:
+                    mIsInteractive = mPowerManager.isInteractive();
+                    update();
+                    break;
+                case Intent.ACTION_SCREEN_OFF:
+                    mIsInteractive = mPowerManager.isInteractive();
+                    update();
+                    break;
+                case PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED:
+                    mIsDeviceIdleMode = mPowerManager.isDeviceIdleMode();
+                    update();
+                    break;
                 case ACTION_POWER_SAVE_MODE_CHANGED:
-                    final boolean on = mPowerManager.isPowerSaveMode();
-                    if (on != mIsPowerSaveMode) {
-                        mIsPowerSaveMode = on;
-                        dlog("power save mode changed, new: " + on);
-                        update();
-                    }
+                    mIsPowerSaveMode = mPowerManager.isPowerSaveMode();
+                    update();
                     break;
                 case ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED:
-                    final int subId = mSubManager.getDefaultDataSubscriptionId();
-                    if (subId != mDefaultDataSubId) {
-                        mDefaultDataSubId = subId;
-                        dlog("dds changed, new: " + subId);
-                        update();
-                    }
+                    updateActiveDataSubId(INVALID_SUBSCRIPTION_ID);
                     break;
                 default:
                     Slog.e(TAG, "Unhandled intent: " + action);
@@ -107,37 +108,35 @@ public class Smart5gService extends SystemService {
         }
     };
 
-    private final ConnectivityManager.NetworkCallback mNetworkCallback =
+    private final ConnectivityManager.NetworkCallback mDefaultNetworkCallback =
             new ConnectivityManager.NetworkCallback() {
-        Map<Network, NetworkCapabilities> mNetworkCaps = new HashMap<>();
+        @Override
+        public void onAvailable(Network network) {
+            mDefaultNetwork = network;
+            updateDefaultNetworkState(network,
+                    mConnectivityManager.getNetworkCapabilities(network));
+        }
 
         @Override
         public void onLost(Network network) {
-            dlog("NetworkCallback: onLost");
-            mNetworkCaps.remove(network);
-            refresh();
+            if (!network.equals(mDefaultNetwork)) {
+                return;
+            }
+            mDefaultNetwork = null;
+            mDefaultNetworkState = DEFAULT_NETWORK_NONE;
+            update();
         }
 
         @Override
         public void onCapabilitiesChanged(Network network, NetworkCapabilities caps) {
-            dlog("NetworkCallback: onCapabilitiesChanged");
-            mNetworkCaps.put(network, caps);
-            refresh();
-        }
-
-        private void refresh() {
-            final boolean isInternetConnected = !mNetworkCaps.isEmpty();
-            final boolean isMobileDataActive = mNetworkCaps.values().stream()
-                    .anyMatch(nc -> nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR));
-            dlog("NetworkCallback: isInternetConnected:" + isInternetConnected
-                    + " isMobileDataActive:" + isMobileDataActive);
-            final boolean isOnMobileData = isMobileDataActive || !isInternetConnected;
-            if (isOnMobileData != mIsOnMobileData) {
-                mIsOnMobileData = isOnMobileData;
-                update();
+            if (network.equals(mDefaultNetwork)) {
+                updateDefaultNetworkState(network, caps);
             }
         }
     };
+
+    private final ActiveDataSubscriptionCallback mActiveDataSubscriptionCallback =
+            new ActiveDataSubscriptionCallback();
 
     private final SubscriptionManager.OnSubscriptionsChangedListener mSubListener =
             new SubscriptionManager.OnSubscriptionsChangedListener() {
@@ -153,9 +152,11 @@ public class Smart5gService extends SystemService {
                 for (int subId : subs) {
                     dlog("registering content observer for subId " + subId);
                     mContext.getContentResolver().registerContentObserver(
-                            Settings.System.getUriFor(SMART_5G + subId), false, mSettingObserver);
+                            Settings.System.getUriFor(SMART_5G + subId), false, mSettingObserver,
+                            UserHandle.USER_ALL);
                     mContext.getContentResolver().registerContentObserver(
-                            Settings.Global.getUriFor(MOBILE_DATA + subId), false, mSettingObserver);
+                            Settings.Global.getUriFor(MOBILE_DATA + subId), false, mSettingObserver,
+                            UserHandle.USER_ALL);
                 }
                 mActiveSubIds = subs;
                 update();
@@ -198,16 +199,56 @@ public class Smart5gService extends SystemService {
         } else if (phase == SystemService.PHASE_BOOT_COMPLETED) {
             mHandler.post(() -> {
                 dlog("onBootPhase PHASE_BOOT_COMPLETED");
+                mIsInteractive = mPowerManager.isInteractive();
+                mIsDeviceIdleMode = mPowerManager.isDeviceIdleMode();
                 mIsPowerSaveMode = mPowerManager.isPowerSaveMode();
-                mDefaultDataSubId = mSubManager.getDefaultDataSubscriptionId();
+                mActiveDataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
                 final IntentFilter filter = new IntentFilter(ACTION_POWER_SAVE_MODE_CHANGED);
+                filter.addAction(Intent.ACTION_SCREEN_ON);
+                filter.addAction(Intent.ACTION_SCREEN_OFF);
+                filter.addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
                 filter.addAction(ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
                 mContext.registerReceiver(mIntentReceiver, filter, null, mHandler);
-                mConnectivityManager.registerNetworkCallback(
-                        INTERNET_NETWORK_REQUEST, mNetworkCallback, mHandler);
+                mConnectivityManager.registerSystemDefaultNetworkCallback(
+                        mDefaultNetworkCallback, mHandler);
                 mSubManager.addOnSubscriptionsChangedListener(mHandlerExecutor, mSubListener);
+                mTelephonyManager.registerTelephonyCallback(
+                        mHandlerExecutor, mActiveDataSubscriptionCallback);
             });
         }
+    }
+
+    private void updateDefaultNetworkState(Network network, NetworkCapabilities caps) {
+        if (caps == null) {
+            return;
+        }
+        mDefaultNetwork = network;
+        final int state = caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                ? DEFAULT_NETWORK_CELLULAR : DEFAULT_NETWORK_NON_CELLULAR;
+        if (state != mDefaultNetworkState) {
+            mDefaultNetworkState = state;
+            dlog("Default network is "
+                    + (state == DEFAULT_NETWORK_CELLULAR ? "cellular" : "non-cellular"));
+            update();
+        }
+    }
+
+    private void updateActiveDataSubId(int callbackSubId) {
+        final int fallbackSubId = SubscriptionManager.getDefaultDataSubscriptionId();
+        final int activeDataSubId = SubscriptionManager.isValidSubscriptionId(callbackSubId)
+                ? callbackSubId : fallbackSubId;
+        if (activeDataSubId != mActiveDataSubId) {
+            dlog("Active data subId changed from " + mActiveDataSubId + " to " + activeDataSubId);
+            mActiveDataSubId = activeDataSubId;
+            update();
+        }
+    }
+
+    private int getActiveDataSubId() {
+        if (SubscriptionManager.isValidSubscriptionId(mActiveDataSubId)) {
+            return mActiveDataSubId;
+        }
+        return SubscriptionManager.getDefaultDataSubscriptionId();
     }
 
     private boolean isEnabled(int subId) {
@@ -215,8 +256,13 @@ public class Smart5gService extends SystemService {
                 UserHandle.USER_CURRENT) == 1;
     }
 
-    private boolean isMobileDataEnabled(int subId) {
-        return Settings.Global.getInt(mContext.getContentResolver(), MOBILE_DATA + subId, 1) == 1;
+    private boolean isDataConnectionAllowed(int subId) {
+        try {
+            return mTelephonyManager.createForSubscriptionId(subId).isDataConnectionAllowed();
+        } catch (SecurityException | IllegalStateException | NullPointerException e) {
+            Slog.w(TAG, "Unable to read data state for subId " + subId, e);
+            return true;
+        }
     }
 
     private void update() {
@@ -257,17 +303,28 @@ public class Smart5gService extends SystemService {
         if (!isEnabled(subId)) {
             dlog("shouldDisable5g: smart 5g is disabled for subId " + subId);
             return false;
-        } else if (!isMobileDataEnabled(subId)) {
+        } else if (!isDataConnectionAllowed(subId)) {
             dlog("shouldDisable5g: mobile data is disabled for subId " + subId);
             return true;
         }
         dlog("shouldDisable5g: subId=" + subId + " mIsPowerSaveMode=" + mIsPowerSaveMode
-                + " mIsOnMobileData=" + mIsOnMobileData + " mDefaultDataSubId="
-                + mDefaultDataSubId);
-        return mIsPowerSaveMode // battery saver mode
-                || !mIsOnMobileData // we aren't on mobile data
+                + " mDefaultNetworkState=" + mDefaultNetworkState + " mActiveDataSubId="
+                + getActiveDataSubId());
+        return mIsPowerSaveMode
+                || !mIsInteractive
+                || mIsDeviceIdleMode
+                || mDefaultNetworkState == DEFAULT_NETWORK_NON_CELLULAR
                 // this isn't the default data sim
-                || (mDefaultDataSubId != INVALID_SUBSCRIPTION_ID && subId != mDefaultDataSubId);
+                || (SubscriptionManager.isValidSubscriptionId(getActiveDataSubId())
+                        && subId != getActiveDataSubId());
+    }
+
+    private final class ActiveDataSubscriptionCallback extends TelephonyCallback implements
+            TelephonyCallback.ActiveDataSubscriptionIdListener {
+        @Override
+        public void onActiveDataSubscriptionIdChanged(int subId) {
+            updateActiveDataSubId(subId);
+        }
     }
 
     private static void dlog(String msg) {
