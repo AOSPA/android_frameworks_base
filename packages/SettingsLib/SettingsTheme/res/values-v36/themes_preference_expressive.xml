@@ -26,7 +26,7 @@
         <item name="preferenceScreenStyle">@style/SettingsLibPreference.PreferenceScreen.Expressive</item>
         <item name="preferenceStyle">@style/SettingsLibPreference.Expressive</item>
         <item name="switchPreferenceCompatStyle">@style/SettingsLibPreference.SwitchPreferenceCompat.Expressive</item>
-        <item name="preferenceCategoryTitleTextAppearance">@style/TextAppearance.CategoryTitle.SettingsLib</item>
+        <item name="preferenceCategoryTitleTextAppearance">@style/TextAppearance.SettingsLib.BodyMedium.Emphasized</item>
         <item name="preferenceCategoryTitleTextColor">@color/settingslib_materialColorPrimary</item>
 
         <!-- Expressive Design: overridable styles/themes for Preferences -->
