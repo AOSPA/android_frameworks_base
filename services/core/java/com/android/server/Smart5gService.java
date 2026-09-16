@@ -71,6 +71,7 @@ public class Smart5gService extends SystemService {
     private static final boolean DEBUG = true;
 
     private static final long DISABLE_DELAY_MS = 5_000;
+    private static final long POST_CALL_GUARD_MS = 4_000;
     private static final long TRAFFIC_POLL_INTERVAL_MS = 1_000;
     private static final long TRAFFIC_THRESHOLD_BYTES_PER_SECOND = 1024 * 1024L;
     private static final long TRAFFIC_MARGIN_BYTES_PER_SECOND = 200 * 1024L;
@@ -114,6 +115,13 @@ public class Smart5gService extends SystemService {
     private List<String> mCellularInterfaces = List.of();
     private long mLastMobileBytes;
     private long mLastTrafficSampleElapsed;
+    private boolean mIsPostCallGuardActive;
+
+    private final Runnable mPostCallGuardRunnable = () -> {
+        mIsPostCallGuardActive = false;
+        dlog("Post-call guard ended");
+        reevaluate();
+    };
 
     private final ContentObserver mSettingObserver;
 
@@ -567,8 +575,8 @@ public class Smart5gService extends SystemService {
     }
 
     private void updateRadioPolicy() {
-        if (hasActiveOrUninitializedCall()) {
-            dlog("Holding radio policy while call state is active or uninitialized");
+        if (hasActiveOrUninitializedCall() || mIsPostCallGuardActive) {
+            dlog("Holding radio policy for call state");
             cancelAllPendingDisables();
             return;
         }
@@ -621,6 +629,29 @@ public class Smart5gService extends SystemService {
             }
         }
         return false;
+    }
+
+    private boolean hasActiveCall() {
+        for (CallStateCallback callback : mCallStateCallbacks.values()) {
+            if (callback.mCallState != CALL_STATE_UNINITIALIZED
+                    && callback.mCallState != TelephonyManager.CALL_STATE_IDLE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void startPostCallGuard() {
+        mHandler.removeCallbacks(mPostCallGuardRunnable);
+        mIsPostCallGuardActive = true;
+        cancelAllPendingDisables();
+        mHandler.postDelayed(mPostCallGuardRunnable, POST_CALL_GUARD_MS);
+        dlog("Post-call guard started");
+    }
+
+    private void cancelPostCallGuard() {
+        mHandler.removeCallbacks(mPostCallGuardRunnable);
+        mIsPostCallGuardActive = false;
     }
 
     private void scheduleDisable(int subId) {
@@ -762,8 +793,15 @@ public class Smart5gService extends SystemService {
             if (state == mCallState) {
                 return;
             }
+            final boolean wasActiveCall = hasActiveCall();
             mCallState = state;
             dlog("Call state changed for subId " + mSubId + ": " + state);
+            final boolean isActiveCall = hasActiveCall();
+            if (wasActiveCall && !isActiveCall) {
+                startPostCallGuard();
+            } else if (isActiveCall) {
+                cancelPostCallGuard();
+            }
             reevaluate();
         }
 
