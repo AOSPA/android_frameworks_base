@@ -103,6 +103,7 @@ public class Smart5gService extends SystemService {
     private boolean mIsInteractive;
     private boolean mIsDeviceIdleMode;
     private boolean mIsPowerSaveMode;
+    private boolean mIsThermalRestricted;
     private boolean mIsTetheringActive;
     private boolean mIsGameActive;
     private boolean mIsHighTraffic = true;
@@ -120,6 +121,16 @@ public class Smart5gService extends SystemService {
     private final Runnable mPostCallGuardRunnable = () -> {
         mIsPostCallGuardActive = false;
         dlog("Post-call guard ended");
+        reevaluate();
+    };
+
+    private final PowerManager.OnThermalStatusChangedListener mThermalStatusListener = status -> {
+        final boolean restricted = status >= PowerManager.THERMAL_STATUS_SEVERE;
+        if (restricted == mIsThermalRestricted) {
+            return;
+        }
+        mIsThermalRestricted = restricted;
+        dlog("Thermal restriction active: " + restricted);
         reevaluate();
     };
 
@@ -321,6 +332,8 @@ public class Smart5gService extends SystemService {
         mIsInteractive = mPowerManager.isInteractive();
         mIsDeviceIdleMode = mPowerManager.isDeviceIdleMode();
         mIsPowerSaveMode = mPowerManager.isPowerSaveMode();
+        mIsThermalRestricted = mPowerManager.getCurrentThermalStatus()
+                >= PowerManager.THERMAL_STATUS_SEVERE;
         mActiveDataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
 
         final IntentFilter filter = new IntentFilter(ACTION_POWER_SAVE_MODE_CHANGED);
@@ -333,6 +346,7 @@ public class Smart5gService extends SystemService {
 
         mConnectivityManager.registerSystemDefaultNetworkCallback(
                 mDefaultNetworkCallback, mHandler);
+        mPowerManager.addThermalStatusListener(mHandlerExecutor, mThermalStatusListener);
         mSubManager.addOnSubscriptionsChangedListener(mHandlerExecutor, mSubListener);
         try {
             mTelephonyManager.registerTelephonyCallback(
@@ -595,6 +609,9 @@ public class Smart5gService extends SystemService {
         if (!isEnabled(subId)) {
             return false;
         }
+        if (mIsThermalRestricted) {
+            return true;
+        }
         final int activeDataSubId = getActiveDataSubId();
         if (SubscriptionManager.isValidSubscriptionId(activeDataSubId)
                 && subId != activeDataSubId) {
@@ -737,6 +754,7 @@ public class Smart5gService extends SystemService {
                 && isEnabled(subId)
                 && isDataConnectionAllowed(subId)
                 && !mIsPowerSaveMode
+                && !mIsThermalRestricted
                 && mDefaultNetworkState == DEFAULT_NETWORK_CELLULAR
                 && !mCellularInterfaces.isEmpty()
                 && mIsInteractive
