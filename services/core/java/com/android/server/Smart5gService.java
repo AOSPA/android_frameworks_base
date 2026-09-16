@@ -90,6 +90,7 @@ public class Smart5gService extends SystemService {
     private final Handler mHandler;
     private final Executor mHandlerExecutor;
     private final SparseArray<Runnable> mPendingDisableRunnables = new SparseArray<>();
+    private final SparseArray<Boolean> mNrDualConnectivityStates = new SparseArray<>();
     private final Map<Integer, CallStateCallback> mCallStateCallbacks = new HashMap<>();
     private final Map<String, Boolean> mGamePackageCache = new HashMap<>();
     private final Set<Integer> mForegroundGameUids = new HashSet<>();
@@ -501,6 +502,7 @@ public class Smart5gService extends SystemService {
                 + ", now: " + Arrays.toString(newSubIds));
         unregisterCallStateCallbacks();
         cancelAllPendingDisables();
+        mNrDualConnectivityStates.clear();
         mContext.getContentResolver().unregisterContentObserver(mSettingObserver);
         mActiveSubIds = newSubIds;
 
@@ -589,18 +591,19 @@ public class Smart5gService extends SystemService {
     }
 
     private void updateRadioPolicy() {
-        if (hasActiveOrUninitializedCall() || mIsPostCallGuardActive) {
+        if (hasUninitializedCallState() || mIsPostCallGuardActive) {
             dlog("Holding radio policy for call state");
             cancelAllPendingDisables();
             return;
         }
 
+        final boolean allowPowerReasonFallback = !hasActiveCall();
         for (int subId : mActiveSubIds) {
             if (shouldDisable5g(subId)) {
                 scheduleDisable(subId);
             } else {
                 cancelPendingDisable(subId);
-                set5gAllowed(subId, true);
+                set5gAllowed(subId, true, allowPowerReasonFallback);
             }
         }
     }
@@ -638,10 +641,10 @@ public class Smart5gService extends SystemService {
         return false;
     }
 
-    private boolean hasActiveOrUninitializedCall() {
+    private boolean hasUninitializedCallState() {
         for (int subId : mActiveSubIds) {
             final CallStateCallback callback = mCallStateCallbacks.get(subId);
-            if (callback == null || callback.mCallState != TelephonyManager.CALL_STATE_IDLE) {
+            if (callback == null || callback.mCallState == CALL_STATE_UNINITIALIZED) {
                 return true;
             }
         }
@@ -682,8 +685,9 @@ public class Smart5gService extends SystemService {
                     return;
                 }
                 mPendingDisableRunnables.remove(subId);
-                if (!hasActiveOrUninitializedCall() && shouldDisable5g(subId)) {
-                    set5gAllowed(subId, false);
+                if (!hasUninitializedCallState() && !mIsPostCallGuardActive
+                        && shouldDisable5g(subId)) {
+                    set5gAllowed(subId, false, !hasActiveCall());
                 }
             }
         };
@@ -711,27 +715,71 @@ public class Smart5gService extends SystemService {
         mPendingDisableRunnables.clear();
     }
 
-    private void set5gAllowed(int subId, boolean allowed) {
+    private void set5gAllowed(
+            int subId, boolean allowed, boolean allowPowerReasonFallback) {
         try {
             final TelephonyManager tm = mTelephonyManager.createForSubscriptionId(subId);
             if ((tm.getSupportedRadioAccessFamily()
                     & TelephonyManager.NETWORK_TYPE_BITMASK_NR) == 0) {
                 return;
             }
-            final long currentTypes = tm.getAllowedNetworkTypesForReason(
-                    ALLOWED_NETWORK_TYPES_REASON_POWER);
-            final long updatedTypes = allowed
-                    ? currentTypes | TelephonyManager.NETWORK_TYPE_BITMASK_NR
-                    : currentTypes & ~TelephonyManager.NETWORK_TYPE_BITMASK_NR;
-            if (updatedTypes == currentTypes) {
+            if (setNrDualConnectivityState(tm, subId, allowed)) {
                 return;
             }
-            tm.setAllowedNetworkTypesForReason(ALLOWED_NETWORK_TYPES_REASON_POWER, updatedTypes);
-            dlog((allowed ? "Enabled" : "Disabled") + " 5G for subId " + subId);
-        } catch (SecurityException | IllegalStateException | NullPointerException
-                | DeadSystemRuntimeException e) {
+            if (allowPowerReasonFallback) {
+                set5gAllowedForPowerReason(tm, subId, allowed);
+            }
+        } catch (RuntimeException e) {
             Slog.w(TAG, "Unable to update 5G policy for subId " + subId, e);
         }
+    }
+
+    private boolean setNrDualConnectivityState(
+            TelephonyManager tm, int subId, boolean allowed) {
+        final Boolean currentState = mNrDualConnectivityStates.get(subId);
+        if (currentState != null && currentState == allowed) {
+            return true;
+        }
+        try {
+            if (!tm.isRadioInterfaceCapabilitySupported(
+                    TelephonyManager.CAPABILITY_NR_DUAL_CONNECTIVITY_CONFIGURATION_AVAILABLE)) {
+                mNrDualConnectivityStates.remove(subId);
+                return false;
+            }
+            final int state = allowed
+                    ? TelephonyManager.NR_DUAL_CONNECTIVITY_ENABLE
+                    : TelephonyManager.NR_DUAL_CONNECTIVITY_DISABLE;
+            final int result = tm.setNrDualConnectivityState(state);
+            if (result != TelephonyManager.ENABLE_NR_DUAL_CONNECTIVITY_SUCCESS) {
+                Slog.w(TAG, "Unable to update NR dual connectivity for subId " + subId
+                        + ", result=" + result);
+                mNrDualConnectivityStates.remove(subId);
+                return false;
+            }
+            mNrDualConnectivityStates.put(subId, allowed);
+            dlog((allowed ? "Enabled" : "Disabled")
+                    + " NR dual connectivity for subId " + subId);
+            set5gAllowedForPowerReason(tm, subId, true);
+            return true;
+        } catch (RuntimeException e) {
+            Slog.w(TAG, "Unable to update NR dual connectivity for subId " + subId, e);
+            mNrDualConnectivityStates.remove(subId);
+            return false;
+        }
+    }
+
+    private void set5gAllowedForPowerReason(
+            TelephonyManager tm, int subId, boolean allowed) {
+        final long currentTypes = tm.getAllowedNetworkTypesForReason(
+                ALLOWED_NETWORK_TYPES_REASON_POWER);
+        final long updatedTypes = allowed
+                ? currentTypes | TelephonyManager.NETWORK_TYPE_BITMASK_NR
+                : currentTypes & ~TelephonyManager.NETWORK_TYPE_BITMASK_NR;
+        if (updatedTypes == currentTypes) {
+            return;
+        }
+        tm.setAllowedNetworkTypesForReason(ALLOWED_NETWORK_TYPES_REASON_POWER, updatedTypes);
+        dlog((allowed ? "Enabled" : "Disabled") + " 5G for subId " + subId);
     }
 
     private void updateTrafficMonitoring() {
