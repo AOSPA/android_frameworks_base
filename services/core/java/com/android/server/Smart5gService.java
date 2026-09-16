@@ -35,6 +35,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.TetheringManager;
@@ -59,6 +60,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -109,6 +111,7 @@ public class Smart5gService extends SystemService {
     private int mActiveDataSubId = INVALID_SUBSCRIPTION_ID;
     private boolean mHasActiveDataSubIdCallback;
     private Network mDefaultNetwork;
+    private List<String> mCellularInterfaces = List.of();
     private long mLastMobileBytes;
     private long mLastTrafficSampleElapsed;
 
@@ -157,6 +160,7 @@ public class Smart5gService extends SystemService {
             mDefaultNetwork = network;
             updateDefaultNetworkState(network,
                     mConnectivityManager.getNetworkCapabilities(network));
+            updateCellularInterface(network, mConnectivityManager.getLinkProperties(network));
         }
 
         @Override
@@ -167,6 +171,11 @@ public class Smart5gService extends SystemService {
         }
 
         @Override
+        public void onLinkPropertiesChanged(Network network, LinkProperties linkProperties) {
+            updateCellularInterface(network, linkProperties);
+        }
+
+        @Override
         public void onLost(Network network) {
             if (!network.equals(mDefaultNetwork)) {
                 return;
@@ -174,6 +183,7 @@ public class Smart5gService extends SystemService {
             dlog("Default network lost");
             mDefaultNetwork = null;
             mDefaultNetworkState = DEFAULT_NETWORK_NONE;
+            setCellularInterfaces(List.of());
             reevaluate();
         }
     };
@@ -423,6 +433,9 @@ public class Smart5gService extends SystemService {
         mDefaultNetwork = network;
         final int state = caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                 ? DEFAULT_NETWORK_CELLULAR : DEFAULT_NETWORK_NON_CELLULAR;
+        if (state != DEFAULT_NETWORK_CELLULAR) {
+            setCellularInterfaces(List.of());
+        }
         if (state == mDefaultNetworkState) {
             return;
         }
@@ -430,6 +443,28 @@ public class Smart5gService extends SystemService {
         dlog("Default network is "
                 + (state == DEFAULT_NETWORK_CELLULAR ? "cellular" : "non-cellular"));
         reevaluate();
+    }
+
+    private void updateCellularInterface(Network network, LinkProperties linkProperties) {
+        if (!network.equals(mDefaultNetwork)
+                || mDefaultNetworkState != DEFAULT_NETWORK_CELLULAR) {
+            return;
+        }
+        if (setCellularInterfaces(
+                linkProperties != null ? linkProperties.getAllInterfaceNames() : List.of())) {
+            reevaluate();
+        }
+    }
+
+    private boolean setCellularInterfaces(List<String> interfaceNames) {
+        if (Objects.equals(interfaceNames, mCellularInterfaces)) {
+            return false;
+        }
+        mCellularInterfaces = List.copyOf(interfaceNames);
+        mIsHighTraffic = true;
+        stopTrafficMonitoring();
+        dlog("Cellular interfaces: " + mCellularInterfaces);
+        return true;
     }
 
     private void updateSubscriptions() {
@@ -672,6 +707,7 @@ public class Smart5gService extends SystemService {
                 && isDataConnectionAllowed(subId)
                 && !mIsPowerSaveMode
                 && mDefaultNetworkState == DEFAULT_NETWORK_CELLULAR
+                && !mCellularInterfaces.isEmpty()
                 && mIsInteractive
                 && !mIsDeviceIdleMode;
     }
@@ -686,13 +722,20 @@ public class Smart5gService extends SystemService {
         mLastTrafficSampleElapsed = 0;
     }
 
-    private static long getMobileBytes() {
-        final long rxBytes = TrafficStats.getMobileRxBytes();
-        final long txBytes = TrafficStats.getMobileTxBytes();
-        if (rxBytes < 0 || txBytes < 0) {
+    private long getMobileBytes() {
+        if (mCellularInterfaces.isEmpty()) {
             return -1;
         }
-        return rxBytes + txBytes;
+        long totalBytes = 0;
+        for (String interfaceName : mCellularInterfaces) {
+            final long rxBytes = TrafficStats.getRxBytes(interfaceName);
+            final long txBytes = TrafficStats.getTxBytes(interfaceName);
+            if (rxBytes < 0 || txBytes < 0) {
+                return -1;
+            }
+            totalBytes += rxBytes + txBytes;
+        }
+        return totalBytes;
     }
 
     private final class ActiveDataSubscriptionCallback extends TelephonyCallback implements
