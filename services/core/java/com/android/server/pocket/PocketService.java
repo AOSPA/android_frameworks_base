@@ -78,6 +78,8 @@ public class PocketService extends SystemService implements IBinder.DeathRecipie
      */
     private static final int VENDOR_SENSOR_IN_POCKET = 1;
 
+    private static final int VENDOR_SENSOR_OUT_OF_POCKET = 2;
+
     /**
      * The rate proximity sensor events are delivered at.
      */
@@ -460,11 +462,11 @@ public class PocketService extends SystemService implements IBinder.DeathRecipie
     };
 
     private boolean isDeviceInPocket() {
-        if (!mSupportedByDevice){
+        if (!mSupportedByDevice) {
             return false;
         }
 
-        if (mVendorSensorState != VENDOR_SENSOR_UNKNOWN) {
+        if (mVendorSensor != null) {
             return mVendorSensorState == VENDOR_SENSOR_IN_POCKET;
         }
 
@@ -766,7 +768,8 @@ public class PocketService extends SystemService implements IBinder.DeathRecipie
                     Log.d(TAG, "Event: time=" + time + ", value=" + sensorEvent.values[0]
                             + ", isInPocket=" + isVendorPocket);
                 }
-                mVendorSensorState = isVendorPocket ? VENDOR_SENSOR_IN_POCKET : VENDOR_SENSOR_UNKNOWN;
+                mVendorSensorState = isVendorPocket
+                        ? VENDOR_SENSOR_IN_POCKET : VENDOR_SENSOR_OUT_OF_POCKET;
             }
         } catch (NullPointerException e) {
             Log.e(TAG, "Event: something went wrong, exception caught, e = " + e);
