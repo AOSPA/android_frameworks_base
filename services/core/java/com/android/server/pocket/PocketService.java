@@ -178,13 +178,19 @@ public class PocketService extends SystemService implements IBinder.DeathRecipie
                         com.android.internal.R.string.config_pocketJudgeVendorSensorName);
         mVendorPocketSensorValue = mContext.getResources().getFloat(
                         com.android.internal.R.dimen.config_pocketJudgeVendorSensorValue);
-        mProximitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+        mProximitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY, true);
+        if (mProximitySensor == null) {
+            mProximitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY, false);
+        }
         if (mProximitySensor != null) {
             mProximityMaxRange = mProximitySensor.getMaximumRange();
         }
-        mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-        if (mLightSensor != null) {
-            mLightMaxRange = mLightSensor.getMaximumRange();
+        if (mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_pocketModeLightSensorSupported)) {
+            mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+            if (mLightSensor != null) {
+                mLightMaxRange = mLightSensor.getMaximumRange();
+            }
         }
         mVendorSensor = getSensor(mSensorManager, mVendorPocketSensor);
         mSupportedByDevice = mContext.getResources().getBoolean(
