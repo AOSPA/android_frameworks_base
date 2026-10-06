@@ -1122,4 +1122,95 @@ public class LightsServiceTest {
         inOrder.verify(mHal).setLightState(eq(5), stateCaptor.capture());
         assertThat(stateCaptor.getValue().color).isEqualTo(GREEN);
     }
+
+    @Test
+    @EnableFlags({Flags.FLAG_ENABLE_LIGHT_ANIMATIONS})
+    public void testControlLights_staleCompletionAfterSetState() throws Exception {
+        LightsService service = new LightsService(mContext, () -> mHal, mServiceThread.getLooper());
+        LightsManager manager = new SystemLightsManager(mContext, service.mManagerService);
+        Light light = manager.getLights().get(ANIMATED_LIGHT_INDEX);
+        MultiLightEffect effect = new MultiLightEffect.Builder()
+                .addLightSequence(
+                        light, new ColorSequence.Builder().addControlPoint(100, BLUE).build())
+                .build();
+
+        try (LightsManager.LightsSession session = manager.openSession()) {
+            session.requestLights(new LightsRequest.Builder().setEffect(effect).build());
+            Message completion = mTestLooperManager.poll();
+            assertThat(completion).isNotNull();
+            try {
+                // Cancel playback after the completion leaves the handler queue.
+                session.requestLights(new LightsRequest.Builder()
+                        .addLight(light, new LightState(RED)).build());
+                mTestLooperManager.execute(completion);
+
+                assertThat(manager.getLightState(light).getColor()).isEqualTo(RED);
+                assertThat(manager.getLightSequence(light)).isNull();
+            } finally {
+                mTestLooperManager.recycle(completion);
+            }
+        }
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_ENABLE_LIGHT_ANIMATIONS})
+    public void testControlLights_staleCompletionAfterSessionClose() throws Exception {
+        LightsService service = new LightsService(mContext, () -> mHal, mServiceThread.getLooper());
+        LightsManager manager = new SystemLightsManager(mContext, service.mManagerService);
+        Light light = manager.getLights().get(ANIMATED_LIGHT_INDEX);
+        MultiLightEffect effect = new MultiLightEffect.Builder()
+                .addLightSequence(
+                        light, new ColorSequence.Builder().addControlPoint(100, BLUE).build())
+                .build();
+
+        try (LightsManager.LightsSession session = manager.openSession()) {
+            session.requestLights(new LightsRequest.Builder().setEffect(effect).build());
+            Message completion = mTestLooperManager.poll();
+            assertThat(completion).isNotNull();
+            try {
+                // Close the session after the completion leaves the handler queue.
+                session.close();
+                mTestLooperManager.execute(completion);
+
+                assertThat(manager.getLightState(light).getColor()).isEqualTo(TRANSPARENT);
+                assertThat(manager.getLightSequence(light)).isNull();
+            } finally {
+                mTestLooperManager.recycle(completion);
+            }
+        }
+    }
+
+    @Test
+    @EnableFlags({Flags.FLAG_ENABLE_LIGHT_ANIMATIONS})
+    public void testControlLights_staleCompletionAfterPreempt() throws Exception {
+        LightsService service = new LightsService(mContext, () -> mHal, mServiceThread.getLooper());
+        LightsManager manager = new SystemLightsManager(mContext, service.mManagerService);
+        Light light = manager.getLights().get(ANIMATED_LIGHT_INDEX);
+        MultiLightEffect effect1 = new MultiLightEffect.Builder()
+                .addLightSequence(
+                        light, new ColorSequence.Builder().addControlPoint(100, BLUE).build())
+                .build();
+        MultiLightEffect effect2 = new MultiLightEffect.Builder()
+                .addLightSequence(
+                        light, new ColorSequence.Builder().addControlPoint(100, YELLOW).build())
+                .setPreemptive(true)
+                .build();
+
+        try (LightsManager.LightsSession session = manager.openSession()) {
+            session.requestLights(new LightsRequest.Builder().setEffect(effect1).build());
+            Message completion = mTestLooperManager.poll();
+            assertThat(completion).isNotNull();
+            try {
+                // Replace playback after the first completion leaves the handler queue.
+                session.requestLights(new LightsRequest.Builder().setEffect(effect2).build());
+                mTestLooperManager.execute(completion);
+
+                assertThat(manager.getLightSequence(light)).isNotNull();
+                assertThat(manager.getLightSequence(light).getColors()).asList()
+                        .containsExactly(YELLOW);
+            } finally {
+                mTestLooperManager.recycle(completion);
+            }
+        }
+    }
 }

@@ -93,11 +93,14 @@ public class LightsService extends SystemService {
         private final LightsManagerBinderService.Session.EventListener mSessionListener =
                 new Session.EventListener() {
                     @Override
-                    public void onEffectPlaybackComplete(Session session) {
+                    public void onEffectPlaybackComplete(Session session, int playbackGeneration) {
                         synchronized (LightsService.this) {
-                            session.transitionToNextEffect();
-
-                            computeAndApplyLightConfigurationsLocked();
+                            if (!mSessions.contains(session)) {
+                                return;
+                            }
+                            if (session.transitionToNextEffect(playbackGeneration)) {
+                                computeAndApplyLightConfigurationsLocked();
+                            }
                         }
                     }
                 };
@@ -353,6 +356,7 @@ public class LightsService extends SystemService {
             synchronized (LightsService.this) {
                 final Session session = getSessionLocked(token);
                 if (session != null) {
+                    session.clearEffectQueue();
                     mSessions.remove(session);
                     computeAndApplyLightConfigurationsLocked();
                     token.unlinkToDeath(LightsManagerBinderService.this, 0);
@@ -512,7 +516,7 @@ public class LightsService extends SystemService {
 
         final class Session implements Comparable<Session> {
             public interface EventListener {
-                void onEffectPlaybackComplete(Session session);
+                void onEffectPlaybackComplete(Session session, int playbackGeneration);
             }
 
             private static final int MAX_EFFECT_QUEUE_SIZE = 10;
@@ -524,6 +528,8 @@ public class LightsService extends SystemService {
             final Handler mHandler;
 
             final int mPriority;
+            // Reject completions that were dequeued before playback was canceled or replaced.
+            private int mPlaybackGeneration = 0;
 
             Session(IBinder token, int priority, EventListener listener, Handler handler) {
                 mToken = token;
@@ -536,7 +542,7 @@ public class LightsService extends SystemService {
                 LightConfiguration previousConfig = mConfigurations.get(lightId);
                 // If the light was part of an effect, clear the effect first.
                 if (previousConfig != null && previousConfig.isDynamic()) {
-                    clearEffectConfiguration(mEffects.getFirst());
+                    clearEffectConfiguration(previousConfig.getEffect());
                     clearEffectQueue();
                 }
 
@@ -564,7 +570,10 @@ public class LightsService extends SystemService {
                 }
             }
 
-            void transitionToNextEffect() {
+            boolean transitionToNextEffect(int playbackGeneration) {
+                if (mEffects.isEmpty() || playbackGeneration != mPlaybackGeneration) {
+                    return false;
+                }
                 // Remove the effect that just ended playback and clear the state.
                 clearEffectConfiguration(mEffects.pop());
 
@@ -572,6 +581,7 @@ public class LightsService extends SystemService {
                 if (nextEffect != null) {
                     applyEffectConfiguration(nextEffect);
                 }
+                return true;
             }
 
             private void applyEffectConfiguration(MultiLightEffect effect) {
@@ -580,11 +590,12 @@ public class LightsService extends SystemService {
                     mConfigurations.put(lightId, newConfig);
                 }
 
+                final int generation = ++mPlaybackGeneration;
                 // If the effect is not infinite, schedule the transition.
                 if (effect.getIterations() > 0) {
                     mHandler.postDelayed(
                             () -> {
-                                mListener.onEffectPlaybackComplete(this);
+                                mListener.onEffectPlaybackComplete(this, generation);
                             },
                             /* token= */this,
                             effect.getTotalDurationMillis());
@@ -592,6 +603,7 @@ public class LightsService extends SystemService {
             }
 
             private void clearEffectQueue() {
+                mPlaybackGeneration++;
                 mHandler.removeCallbacksAndMessages(Session.this);
                 mEffects.clear();
             }
