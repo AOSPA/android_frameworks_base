@@ -785,7 +785,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
         @Override
         public void handleMessage(Message msg) {
-            KeyEvent event = (KeyEvent) msg.obj;
+            // Not every message carries a KeyEvent (MSG_SWITCH_KEYBOARD_LAYOUT sends a
+            // SwitchKeyboardLayoutMessageObject), so only cast when it is one.
+            KeyEvent event = msg.obj instanceof KeyEvent ? (KeyEvent) msg.obj : null;
             switch (msg.what) {
                 case MSG_DISPATCH_MEDIA_KEY_WITH_WAKE_LOCK:
                     dispatchMediaKeyWithWakeLock((KeyEvent)msg.obj);
